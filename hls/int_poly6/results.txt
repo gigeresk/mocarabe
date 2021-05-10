@@ -1,0 +1,27 @@
+CLB:          47619
+LUT:          42937
+FF:          352210
+DSP:           5508
+BRAM:             0
+SRL:          21442
+URAM:             0
+#=== Final timing ===
+CP required:    1.429
+CP achieved post-synthesis:    2.416
+CP achieved post-implementation:    4.788
+Timing not met
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       67|       67| 95.743 ns | 95.743 ns |   67|   67|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       65|       65|        54|          5|          5|     3|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+

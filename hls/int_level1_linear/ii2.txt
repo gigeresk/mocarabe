@@ -1,0 +1,22 @@
+int_level1_linear
+int_level1_linear_306_918_700
+results/int_level1_linear_306_918_700/solution1/syn/report/int_level1_linear_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_level1_linear, 306, 45573, 111454, 918, 0, 2.164,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       26|       26| 37.154 ns | 37.154 ns |   26|   26|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       24|       24|        19|          2|          2|     3|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

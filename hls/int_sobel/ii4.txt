@@ -1,0 +1,22 @@
+int_sobel
+int_sobel_207_621_700
+results/int_sobel_207_621_700/solution1/syn/report/int_sobel_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_sobel, 207, 28925, 103022, 621, 0, 2.309,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       31|       31| 44.299 ns | 44.299 ns |   31|   31|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       29|       29|        14|          4|          4|     4|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

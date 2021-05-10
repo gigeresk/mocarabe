@@ -1,0 +1,22 @@
+adder_chain
+int_level1_saturation_90_810_700
+results/int_level1_saturation_90_810_700/solution1/syn/report/int_level1_saturation_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_level1_saturation, 90, 17303, 67173, 540, 0, 1.475,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       33|       33| 47.157 ns | 47.157 ns |   33|   33|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       31|       31|        21|          1|          1|    11|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

@@ -1,0 +1,22 @@
+int_poly4
+int_poly4_306_918_700
+results/int_poly4_306_918_700/solution1/syn/report/int_poly4_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_poly4, 306, 82342, 141165, 1836, 0, 2.599,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       42|       42| 60.018 ns | 60.018 ns |   42|   42|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       40|       40|        35|          2|          2|     3|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

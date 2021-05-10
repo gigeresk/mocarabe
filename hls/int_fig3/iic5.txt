@@ -1,0 +1,22 @@
+int_fig3
+int_fig3_765_5_700
+results/int_fig3_765_5_700/solution1/syn/report/int_fig3_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_fig3, 765, 34050, 199395, 2295, 0, 2.611,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       21|       21| 30.009 ns | 30.009 ns |   21|   21|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       19|       19|        15|          5|          5|     1|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

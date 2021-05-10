@@ -1,0 +1,22 @@
+adder_chain
+int_dct_12_648_700
+results/int_dct_12_648_700/solution1/syn/report/int_dct_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_dct, 12, 11151, 30683, 756, 0, 1.490,
++ Latency: 
+    * Summary: 
+    +---------+---------+----------+----------+-----+-----+---------+
+    |  Latency (cycles) |  Latency (absolute) |  Interval | Pipeline|
+    |   min   |   max   |    min   |    max   | min | max |   Type  |
+    +---------+---------+----------+----------+-----+-----+---------+
+    |      100|      100| 0.143 us | 0.143 us |  100|  100|   none  |
+    +---------+---------+----------+----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       98|       98|        14|          1|          1|    85|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

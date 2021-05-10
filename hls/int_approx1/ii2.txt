@@ -1,0 +1,22 @@
+int_approx1
+int_approx1_207_828_700
+results/int_approx1_207_828_700/solution1/syn/report/int_approx1_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_approx1, 207, 38738, 85163, 621, 0, 2.088,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       36|       36| 51.444 ns | 51.444 ns |   36|   36|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       34|       34|        23|          3|          2|     4|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

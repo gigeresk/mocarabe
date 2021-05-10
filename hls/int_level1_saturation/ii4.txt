@@ -1,0 +1,22 @@
+int_level1_saturation
+int_level1_saturation_324_2916_700
+results/int_level1_saturation_324_2916_700/solution1/syn/report/int_level1_saturation_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_level1_saturation, 324, 51503, 158823, 1944, 0, 3.603,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       34|       34| 48.586 ns | 48.586 ns |   34|   34|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       32|       32|        21|          4|          4|     3|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

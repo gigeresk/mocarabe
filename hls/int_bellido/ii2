@@ -1,0 +1,4 @@
+int_bellido_138_690_700
+results/int_bellido_138_690_700/solution1/syn/report/int_bellido_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_bellido, 138, , , , , ,

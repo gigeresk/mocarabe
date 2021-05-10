@@ -1,0 +1,22 @@
+int_deriche
+int_deriche_27_729_700
+results/int_deriche_27_729_700/solution1/syn/report/int_deriche_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_deriche, 27, 56995, 130546, 1215, 0, 5.558,
++ Latency: 
+    * Summary: 
+    +---------+---------+----------+----------+-----+-----+---------+
+    |  Latency (cycles) |  Latency (absolute) |  Interval | Pipeline|
+    |   min   |   max   |    min   |    max   | min | max |   Type  |
+    +---------+---------+----------+----------+-----+-----+---------+
+    |      157|      157| 0.224 us | 0.224 us |  157|  157|   none  |
+    +---------+---------+----------+----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |      155|      155|        45|          3|          3|    37|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

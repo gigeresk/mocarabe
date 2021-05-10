@@ -1,0 +1,22 @@
+adder_chain
+int_bellido_90_720_700
+results/int_bellido_90_720_700/solution1/syn/report/int_bellido_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_bellido, 90, 7838, 36837, 810, 0, 1.948,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       25|       25| 35.725 ns | 35.725 ns |   25|   25|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       23|       23|        13|          1|          1|    11|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

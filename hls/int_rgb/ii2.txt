@@ -1,0 +1,22 @@
+int_rgb
+int_rgb_81_567_700
+results/int_rgb_81_567_700/solution1/syn/report/int_rgb_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_rgb, 81, 31616, 72428, 972, 0, 5.724,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       49|       49| 70.021 ns | 70.021 ns |   49|   49|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       47|       47|        13|          3|          2|    12|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

@@ -1,0 +1,55 @@
+#-----------------------------------------------------------
+# Vivado v2020.1 (64-bit)
+# SW Build 2902540 on Wed May 27 19:54:35 MDT 2020
+# IP Build 2902112 on Wed May 27 22:43:36 MDT 2020
+# Start of session at: Thu Nov  5 10:24:44 2020
+# Process ID: 4348
+# Current directory: /home/amellat/cgra-ilp/cgra-ilp/vivado_comparison/int_approx1
+# Command line: vivado
+# Log file: /home/amellat/cgra-ilp/cgra-ilp/vivado_comparison/int_approx1/vivado.log
+# Journal file: /home/amellat/cgra-ilp/cgra-ilp/vivado_comparison/int_approx1/vivado.jou
+#-----------------------------------------------------------
+start_gui
+open_project /spare/amellat/vivado_comparison/int_approx1/results/int_approx1_90_720_700/solution1/impl/verilog/project.xpr
+Scanning sources...
+Finished scanning sources
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository '/spare/amellat/vivado_comparison/int_approx1/results/int_approx1_90_720_700/solution1/impl/ip'.
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/opt/Xilinx/Vivado/2020.1/data/ip'.
+WARNING: [IP_Flow 19-3899] Cannot get the environment domain name variable for the component vendor name. Setting the vendor name to 'user.org'.
+open_project: Time (s): cpu = 00:00:20 ; elapsed = 00:00:08 . Memory (MB): peak = 7190.812 ; gain = 32.031 ; free physical = 94287 ; free virtual = 175616
+update_compile_order -fileset sources_1
+open_run impl_1
+INFO: [Device 21-403] Loading part xcu280-fsvh2892-2L-e
+Netlist sorting complete. Time (s): cpu = 00:00:00.60 ; elapsed = 00:00:00.59 . Memory (MB): peak = 8200.703 ; gain = 0.000 ; free physical = 93018 ; free virtual = 174347
+INFO: [Netlist 29-17] Analyzing 2250 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 6 CPU seconds
+INFO: [Project 1-479] Netlist was created with Vivado 2020.1
+INFO: [Project 1-570] Preparing netlist for logic optimization
+INFO: [Timing 38-478] Restoring timing data from binary archive.
+INFO: [Timing 38-479] Binary timing data restore complete.
+INFO: [Project 1-856] Restoring constraints from binary archive.
+INFO: [Project 1-853] Binary constraint restore complete.
+Reading XDEF placement.
+Reading placer database...
+Reading XDEF routing.
+Read XDEF File: Time (s): cpu = 00:00:06 ; elapsed = 00:00:06 . Memory (MB): peak = 9568.469 ; gain = 161.867 ; free physical = 91800 ; free virtual = 173129
+Restored from archive | CPU: 6.120000 secs | Memory: 131.714272 MB |
+Finished XDEF File Restore: Time (s): cpu = 00:00:06 ; elapsed = 00:00:06 . Memory (MB): peak = 9568.469 ; gain = 161.867 ; free physical = 91800 ; free virtual = 173129
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.01 . Memory (MB): peak = 9568.469 ; gain = 0.000 ; free physical = 91825 ; free virtual = 173154
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 810 instances were transformed.
+  DSP48E2 => DSP48E2 (DSP_ALU, DSP_A_B_DATA, DSP_C_DATA, DSP_MULTIPLIER, DSP_M_DATA, DSP_OUTPUT, DSP_PREADD, DSP_PREADD_DATA): 810 instances
+
+open_run: Time (s): cpu = 00:01:30 ; elapsed = 00:01:14 . Memory (MB): peak = 9933.105 ; gain = 2636.242 ; free physical = 91398 ; free virtual = 172728
+open_report: Time (s): cpu = 00:00:32 ; elapsed = 00:00:05 . Memory (MB): peak = 10075.148 ; gain = 81.246 ; free physical = 91026 ; free virtual = 172355
+CRITICAL WARNING: [Timing 38-282] The design failed to meet the timing requirements. Please see the timing summary report for details on the timing violations.
+report_timing_summary -delay_type min_max -report_unconstrained -check_timing_verbose -max_paths 10 -input_pins -routable_nets -name timing_1
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -2L, Temperature grade: E, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 8 CPUs
+WARNING: [Timing 38-242] The property HD.CLK_SRC of clock port "ap_clk" is not set. In out-of-context mode, this prevents timing estimation for clock delay/skew
+Resolution: Set the HD.CLK_SRC property of the out-of-context port to the location of the clock buffer instance in the top-level design
+report_timing_summary: Time (s): cpu = 00:01:36 ; elapsed = 00:00:44 . Memory (MB): peak = 11769.348 ; gain = 870.199 ; free physical = 89297 ; free virtual = 170626
+close_design
+exit
+INFO: [Common 17-206] Exiting Vivado at Thu Nov  5 10:39:34 2020...

@@ -1,0 +1,22 @@
+int_bellido
+int_bellido_207_2_700
+results/int_bellido_207_2_700/solution1/syn/report/int_bellido_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_bellido, 207, 19119, 59133, 1863, 0, 2.122,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       21|       21| 30.009 ns | 30.009 ns |   21|   21|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       19|       19|        12|          2|          2|     4|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

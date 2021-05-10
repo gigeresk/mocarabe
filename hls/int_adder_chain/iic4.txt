@@ -1,0 +1,22 @@
+int_adder_chain
+int_adder_chain_612_4_700
+results/int_adder_chain_612_4_700/solution1/syn/report/int_adder_chain_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_adder_chain, 612, 53092, 118548, 0, 0, 2.828,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       12|       12| 17.148 ns | 17.148 ns |   12|   12|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       10|       10|         7|          4|          4|     1|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

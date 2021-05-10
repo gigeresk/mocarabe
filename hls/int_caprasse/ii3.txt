@@ -1,0 +1,22 @@
+int_caprasse
+int_caprasse_306_1224_700
+results/int_caprasse_306_1224_700/solution1/syn/report/int_caprasse_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_caprasse, 306, 68082, 218796, 1836, 0, 3.093,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       30|       30| 42.870 ns | 42.870 ns |   30|   30|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- Loop 1  |       28|       28|        20|          3|          3|     3|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

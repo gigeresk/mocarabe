@@ -1,0 +1,22 @@
+adder_chain
+int_fir32_6_396_700
+results/int_fir32_6_396_700/solution1/syn/report/int_fir32_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_fir32, 6, 1051, 7966, 99, 0, 1.191,
++ Latency: 
+    * Summary: 
+    +---------+---------+----------+----------+-----+-----+---------+
+    |  Latency (cycles) |  Latency (absolute) |  Interval | Pipeline|
+    |   min   |   max   |    min   |    max   | min | max |   Type  |
+    +---------+---------+----------+----------+-----+-----+---------+
+    |      188|      188| 0.269 us | 0.269 us |  188|  188|   none  |
+    +---------+---------+----------+----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |      186|      186|        17|          1|          1|   170|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

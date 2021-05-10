@@ -1,0 +1,22 @@
+int_iir8
+int_iir8_52_3_700
+results/int_iir8_52_3_700/solution1/syn/report/int_iir8_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_iir8, 52, 35404, 137462, 2340, 0, 2.761,
++ Latency: 
+    * Summary: 
+    +---------+---------+----------+----------+-----+-----+---------+
+    |  Latency (cycles) |  Latency (absolute) |  Interval | Pipeline|
+    |   min   |   max   |    min   |    max   | min | max |   Type  |
+    +---------+---------+----------+----------+-----+-----+---------+
+    |      128|      128| 0.183 us | 0.183 us |  128|  128|   none  |
+    +---------+---------+----------+----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |      126|      126|        70|          3|          3|    19|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

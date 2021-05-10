@@ -1,0 +1,22 @@
+int_gaussian
+int_gaussian_153_765_700
+results/int_gaussian_153_765_700/solution1/syn/report/int_gaussian_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_gaussian, 153, 87571, 124573, 918, 0, 6.519,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       47|       47| 67.163 ns | 67.163 ns |   47|   47|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       45|       45|        17|          5|          4|     6|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

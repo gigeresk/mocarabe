@@ -1,0 +1,22 @@
+int_dct
+int_dct_44_792_700
+results/int_dct_44_792_700/solution1/syn/report/int_dct_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_dct, 44, 52742, 74481, 924, 0, 7.958,
++ Latency: 
+    * Summary: 
+    +---------+---------+----------+----------+-----+-----+---------+
+    |  Latency (cycles) |  Latency (absolute) |  Interval | Pipeline|
+    |   min   |   max   |    min   |    max   | min | max |   Type  |
+    +---------+---------+----------+----------+-----+-----+---------+
+    |       84|       84| 0.120 us | 0.120 us |   84|   84|   none  |
+    +---------+---------+----------+----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       82|       82|        15|          3|          3|    23|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

@@ -1,0 +1,22 @@
+adder_chain
+int_poly_quadratic_138_690_700
+results/int_poly_quadratic_138_690_700/solution1/syn/report/int_poly_quadratic_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_poly_quadratic, 138, 4248, 51368, 828, 0, 1.551,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       27|       27| 38.583 ns | 38.583 ns |   27|   27|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       25|       25|        19|          1|          1|     7|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

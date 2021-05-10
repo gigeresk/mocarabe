@@ -1,0 +1,22 @@
+adder_chain
+int_approx1_90_720_700
+results/int_approx1_90_720_700/solution1/syn/report/int_approx1_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_approx1, 90, 15522, 49505, 810, 0, 1.824,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       32|       32| 45.728 ns | 45.728 ns |   32|   32|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       30|       30|        20|          1|          1|    11|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

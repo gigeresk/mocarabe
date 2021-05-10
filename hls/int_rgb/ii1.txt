@@ -1,0 +1,22 @@
+adder_chain
+int_rgb_46_736_700
+results/int_rgb_46_736_700/solution1/syn/report/int_rgb_csynth.rpt
+BENCH, UNROLL_FACTOR, LUTs, FF, DSP, BRAM,FREQ, Latency, II,
+int_rgb, 46, 12636, 59880, 1242, 0, 2.399,
++ Latency: 
+    * Summary: 
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |  Latency (cycles) |   Latency (absolute)  |  Interval | Pipeline|
+    |   min   |   max   |    min    |    max    | min | max |   Type  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+    |       35|       35| 50.015 ns | 50.015 ns |   35|   35|   none  |
+    +---------+---------+-----------+-----------+-----+-----+---------+
+
+--
+        |          |  Latency (cycles) | Iteration|  Initiation Interval  | Trip |          |
+        | Loop Name|   min   |   max   |  Latency |  achieved |   target  | Count| Pipelined|
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+        |- loop1   |       33|       33|        12|          1|          1|    22|    yes   |
+        +----------+---------+---------+----------+-----------+-----------+------+----------+
+
+

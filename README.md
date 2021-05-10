@@ -61,7 +61,7 @@ Use the following command to add gcc python plugin:
 ```bash
 git submodule add ist-git@git.uwaterloo.ca:watcag-public/gcc-python-plugin.git src/gcc-python-plugin
 ```
-gcc-python-plugin must be built with python3.6
+gcc-python-plugin must be built with python3.5
 
 use the following commands to setup
 ```
@@ -72,10 +72,10 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GCC_PLUGIN_PATH:$GCC_PLUGIN_PATH/gcc-c-
 export PATH="$PATH:/usr/local/etc/cmake-3.15.5-Linux-x86_64/bin"
 ```
 
-Must install `sudo apt install gcc-9-plugin-dev` (replace 9 with whatever version of gcc you're using).  If you don't, building the plugin will result in this error ( FileNotFoundError: [Errno 2] No such file or directory: '/usr/lib/gcc/x86_64-linux-gnu/7/plugin/include/auto-host.h'
+Must install `sudo apt install gcc-8-plugin-dev` (replace 9 with whatever version of gcc you're using).  If you don't, building the plugin will result in this error ( FileNotFoundError: [Errno 2] No such file or directory: '/usr/lib/gcc/x86_64-linux-gnu/7/plugin/include/auto-host.h'
 )
-do sudo apt-get install python3.6
-`make PYTHON=python3 PYTHON_CONFIG=python3-config` in the gcc-python-plugin
+do sudo apt-get install python3.5
+`make PYTHON=python3.5 PYTHON_CONFIG=python3.5-config` in the gcc-python-plugin
 **Running**
 For executing the code, you have to setup the environment first.  Add the following to your shell .*rc file:
 
@@ -270,7 +270,6 @@ For each benchmark run, you can run `get_results.sh` using the following input a
 There are operator json files and scripts to run each benchmark for tarhetting ii 1-5 in each benchmark folder. You can either limit Vivado HLS to use the same number of operators as Mocarabe does (`run.sh`) or run Vivado HLS unconstrained so it can use as many operators as it wants.
 
 Furthermore, there are sweep scripts `sweep.sh` and `sweep_unconstrained.sh` in hls folder to run a sweep of all benchmarks using gnu parallel (https://www.gnu.org/software/parallel/).
-
 
 
 

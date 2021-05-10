@@ -44,7 +44,8 @@ Now that Gurobi is installed, on to other dependencies!
 ## Other dependencies
 
 ### Ubuntu 18.04.1 LTS, valid as of Feb 11 2021
-You can run `setup.sh`, or just copy the following:
+
+Run the following
 ```
 sudo apt update
 sudo apt install python3-pip python3-pil.imagetk dot2tex zsh gcc-9-plugin-dev jq
@@ -58,7 +59,7 @@ pip3 install -r requirements.txt
 
 Use the following command to add gcc python plugin:
 ```bash
-git submodule add -b cgra-ilp ist-git@git.uwaterloo.ca:watcag/gcc-python-plugin.git src/gcc-python-plugin
+git submodule add ist-git@git.uwaterloo.ca:watcag-public/gcc-python-plugin.git src/gcc-python-plugin
 ```
 gcc-python-plugin must be built with python3.6
 

@@ -1,4 +1,3 @@
-# # -*- coding: future_fstrings -*-
 # add more colours/richer colour logic
 # draw full path
 # take into account  when enter and exit occurs at the same time

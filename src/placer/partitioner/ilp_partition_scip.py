@@ -1,18 +1,6 @@
 import math
-import timeit
 
 import pyscipopt as scip 
-
-# model = Model("Example")  # model name is optional
-
-# x = model.addVar("x", vtype="INTEGER")
-# y = model.addVar("y", vtype="INTEGER")
-# model.setObjective(x + y)
-# model.addCons(2*x - y*y >= 0)
-# model.optimize()
-# sol = model.getBestSol()
-# print("x: {}".format(sol[x]))
-# print("y: {}".format(sol[y]))
 
 def partition_operator( operator_ranges, partition ):
     for op, op_range in operator_ranges.items():

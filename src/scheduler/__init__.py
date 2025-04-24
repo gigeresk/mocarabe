@@ -1,4 +1,3 @@
-# # -*- coding: future_fstrings -*-
 import abc
 import itertools
 import os
@@ -331,4 +330,4 @@ class PathfinderScheduler( SchedulerStrategy ):
     from .pathfinder_scheduler import schedule
 
 class IlpScheduler( SchedulerStrategy ):
-    from .ilp_scheduler import schedule
+    from .ilp_scheduler_scip import schedule

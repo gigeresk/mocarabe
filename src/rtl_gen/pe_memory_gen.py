@@ -113,6 +113,8 @@ def cycle_for_pe_op( head_pe_xy, net_id, variable, C,T ):
             try:
                 if variable[head_pe_xy[0]][head_pe_xy[1]][c][net_id][t] == 1:
                     return t
+                if variable[head_pe_xy[0]][head_pe_xy[1]][c][net_id][t] == 1.0:
+                    return t
             except:
                 continue
     import pdb; pdb.set_trace()

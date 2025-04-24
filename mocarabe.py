@@ -145,7 +145,7 @@ num_nets = len( dataflow_hgraph.get_hyperedge_id_set() )
 file_helper.schedule_filepath = file_helper.schedule_dir + benchmark_name +'-Nx%d-Ny%d-C%d-num_nets%d-T%d' % ( Nx, Ny, C, num_nets, schedule_length ) + '.sol'
 
 layout = ''
-device = Device( Nx, Ny, C, schedule_length, IO_I, IO_O, layout, pe_pipelining_stages, noc_pipelining_stages, unroll_factor, num_nets, II )
+device = Device( Nx, Ny, C, schedule_length, schedule_length, IO_I, IO_O, layout, pe_pipelining_stages, noc_pipelining_stages, unroll_factor, num_nets, II )
 if sched_method == 'ILP':
     boundingBoxEnabled = False
 

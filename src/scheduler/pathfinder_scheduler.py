@@ -2,19 +2,13 @@ import ast
 import heapq
 import os
 import sys
-import math
-import re
 import random
 
-import matplotlib.pyplot as plt
 import networkx as nx
-import timeit
-import func_timeout as timeout
-from datetime import datetime
 
-from device import Device
-from resource_graph import ResourceGraph
-from resource_type import ResourceType
+from src.device import Device
+from src.resource_graph import ResourceGraph
+from src.resource_type import ResourceType
 from .scheduled_netlist import ScheduledNetlist
 from .scheduled_net import ScheduledNet
 

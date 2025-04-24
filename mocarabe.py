@@ -1,5 +1,3 @@
-import sys
-sys.path.append("src")
 import argparse
 import os
 from datetime import datetime
@@ -8,20 +6,16 @@ import collections
 import warnings
 
 import numpy as np
-import pydot
 from networkx.drawing.nx_pydot import write_dot
 
-from operator_map import DeviceMap
-from dataflow_hypergraph import DataflowHypergraph
-from device import Device
-import pe_allocator
-import placer
-import scheduler
-from rtl_gen import RTLGenerator
-from file_util import FilePathsHelper
-from resource_graph import ResourceGraph
-
-from latency import Latency
+from src.dataflow_hypergraph import DataflowHypergraph
+from src.device import Device
+import src.pe_allocator as pe_alloc
+import src.placer as placr
+import src.scheduler as schedulr
+from src.rtl_gen import RTLGenerator
+from src.file_util import FilePathsHelper
+from src.resource_graph import ResourceGraph
 
 parser = argparse.ArgumentParser(description='Space-Time ILP Scheduler')
 parser.add_argument('-dfg', metavar='dfg dir', required=True, type=str, help='path to dfg dir, contains .hgr file')
@@ -122,23 +116,23 @@ write_dot( dataflow_hgraph.to_graph(), os.path.join(file_helper.dot_dir, benchma
 
 ''' PE Allocation '''
 
-Nx, Ny, device_map =  pe_allocator.ClosestFactorsAllocator().allocate_pes( dataflow_hgraph, II, io_diffusion, arith_diffusion )
+Nx, Ny, device_map =  pe_alloc.ClosestFactorsAllocator().allocate_pes( dataflow_hgraph, II, io_diffusion, arith_diffusion )
 print(f'Nx={Nx}, Ny={Ny}')
-print( pe_allocator.to_string( device_map ) )
+print( pe_alloc.to_string( device_map ) )
 num_partitions_given_to_operator = collections.Counter( np.ndarray.flatten( device_map ) )
 
 ''' Partitioning/Packing and Placement '''
 placement_start_time = datetime.now()
 partition_filename = file_helper.partition_dir + benchmark_name + "-K" + str(Nx*Ny) + "-U" + str( unroll_factor )
 
-dfg_node_to_pe_xy_map_, pe_operators = placer.IlpAndSimulatedAnnealingPlacer().place( dataflow_hgraph, Nx*Ny, num_partitions_given_to_operator, partition_filename + '.sol', II,placement_time_delta,Nx,Ny,file_helper.log_dir )
+dfg_node_to_pe_xy_map_, pe_operators = placr.IlpAndSimulatedAnnealingPlacer().place( dataflow_hgraph, Nx*Ny, num_partitions_given_to_operator, partition_filename + '.sol', II,placement_time_delta,Nx,Ny,file_helper.log_dir )
 
 # serialize placement
 file_helper.write_list_to_file( file_helper.placement_dir + 'dfg_node_to_pe_xy.json', dfg_node_to_pe_xy_map_ )
 
 # serialize placed netlist (scheduler input)
-serialized_placed_netlist = placer.serialize_placed_netlist( dataflow_hgraph, dfg_node_to_pe_xy_map_, True )
-placed_netlist = placer.create_placed_netlist( dataflow_hgraph, dfg_node_to_pe_xy_map_, True )
+serialized_placed_netlist = placr.serialize_placed_netlist( dataflow_hgraph, dfg_node_to_pe_xy_map_, True )
+placed_netlist = placr.create_placed_netlist( dataflow_hgraph, dfg_node_to_pe_xy_map_, True )
 
 netfile = open(file_helper.netlist_filepath, "w+")
 netfile.write(serialized_placed_netlist)
@@ -155,7 +149,7 @@ device = Device( Nx, Ny, C, schedule_length, IO_I, IO_O, layout, pe_pipelining_s
 if sched_method == 'ILP':
     boundingBoxEnabled = False
 
-    scheduled_netlist = scheduler.IlpScheduler().run_scheduling_with_timeout( device, placed_netlist, placement_time_delta,file_helper,num_partitions_given_to_operator, tag )
+    scheduled_netlist = schedulr.IlpScheduler().run_scheduling_with_timeout( device, placed_netlist, placement_time_delta,file_helper,num_partitions_given_to_operator, tag )
 
     if scheduled_netlist != None:
         ''' RTL '''
@@ -199,7 +193,7 @@ elif sched_method == 'PF':
     warnings.warn(f"{bcolors.WARNING} PathFinder scheduler not maintained to the same level as ILP scheduler")
     file_helper.tag = tag
     device.num_partitions_given_to_operator = num_partitions_given_to_operator
-    scheduled_netlist = scheduler.PathfinderScheduler().run_scheduling_with_timeout( device, placed_netlist, placement_time_delta,file_helper,num_partitions_given_to_operator, tag )
+    scheduled_netlist = schedulr.PathfinderScheduler().run_scheduling_with_timeout( device, placed_netlist, placement_time_delta,file_helper,num_partitions_given_to_operator, tag )
 
     print( "python3 src/torus_gui_freeze.py --proj {} --zoom 5".format( file_helper.proj_dir) )
     verilog_header = RTLGenerator.verilog_header_gen( file_helper.proj_dir + 'rtl/', device, pe_operators )

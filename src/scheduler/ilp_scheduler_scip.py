@@ -4,9 +4,9 @@ import numpy as np
 
 import pyscipopt as scip
 
-import device
+import src.device
 
-from resource_graph import ResourceGraph
+from src.resource_graph import ResourceGraph
 from .scheduled_netlist import ScheduledNetlist
 from .scheduled_net import ScheduledNet
 

@@ -1,18 +1,11 @@
 import abc
 import itertools
 import os
-import json
-import math
-import re
-import sys
 from datetime import datetime
 
 
 import func_timeout as timeout
-# from gurobipy import *
-import matplotlib.pyplot as plt
-import networkx as nx
-import time
+
 import timeit
 
 from .pathfinder_scheduler import UnroutableError

@@ -4,8 +4,8 @@ import copy
 import networkx as nx
 import numpy as np
 
-from resource_graph import ResourceGraph
-from resource_type import ResourceType
+from src.resource_graph import ResourceGraph
+from src.resource_type import ResourceType
 
 def torus_min_distance_xy( sourcexy, sinkxy, Nx, Ny ):
     source_x = sourcexy % Nx

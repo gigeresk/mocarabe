@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from device import Device
+from src.device import Device
 from .base import PEAllocatorStrategy
 
 class ClosestFactorsAllocator( PEAllocatorStrategy ):    

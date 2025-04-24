@@ -1,7 +1,7 @@
 import networkx as nx
 import itertools
 
-from resource_type import ResourceType
+from src.resource_type import ResourceType
 
 class ResourceGraph( nx.DiGraph ):
     # TODO II constraints

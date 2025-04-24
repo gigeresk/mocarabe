@@ -2,14 +2,7 @@
 # draw full path
 # take into account  when enter and exit occurs at the same time
 
-import os
 import tkinter as tk
-import sys
-import re
-import argparse
-import json
-import ast
-import numpy as np
 import random
 import time
 

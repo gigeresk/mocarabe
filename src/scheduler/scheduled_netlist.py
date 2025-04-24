@@ -1,5 +1,5 @@
-from resource_graph import ResourceGraph
-from resource_type import ResourceType
+from src.resource_graph import ResourceGraph
+from src.resource_type import ResourceType
 
 class ScheduledNetlist:
     # print

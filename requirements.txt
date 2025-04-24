@@ -6,9 +6,9 @@ pyscreenshot>=2.2
 canvasvg>=1.0
 networkx>=2.4
 simanneal>=0.5
-future-fstrings>=1.2.0 
 matplotlib>=3.3.0
 tk>=0.1.0
 lxml>=4.6
 beautifulsoup4>=4.9
 pydot>=1.4.1
+tkinter

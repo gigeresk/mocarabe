@@ -1,15 +1,16 @@
 # # -*- coding: future_fstrings -*-
 import abc
 import itertools
+import os
 import json
 import math
 import re
 import sys
 from datetime import datetime
-from os import path
+
 
 import func_timeout as timeout
-from gurobipy import *
+# from gurobipy import *
 import matplotlib.pyplot as plt
 import networkx as nx
 import time
@@ -56,7 +57,7 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
         run_count = lambda c=itertools.count(1): next(c)
         current_run_count = run_count()
 
-        if not path.exists( file_helper.log_file ):
+        if not os.path.exists( file_helper.log_file ):
             # header: always keep up to date
             log_file = open(file_helper.log_file, "a+")
             header_string = '%s, ' % file_helper.benchmark_name +\
@@ -139,36 +140,36 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
 
                 return scheduled_netlist
 
-            except GurobiError as e:
-                print('Error code ' + str(e.errno) + ": " + str(e))
-                t1 = timeit.default_timer()
-                log_string = "Gurobi ERROR -" + log_string
-                log_string = '%s, ' % file_helper.benchmark_name +\
-                        '%d, ' % device.Nx +\
-                        '%d, ' % device.Ny+\
-                        '%d, ' % device.unroll_factor +\
-                        '%d, ' % device.P +\
-                        '%d, ' % device.physical_channels +\
-                        '%d, ' % device.IO_O +\
-                        '%d, ' % device.T +\
-                        '%d, ' % device.II+\
-                        '%f, ' % place_time.seconds +\
-                        '%f, ' % '-1' +\
-                        '%d, ' % current_run_count +\
-                        '%s, ' % tag +\
-                        '%d, ' % num_partitions_given_to_operator['*'] +\
-                        '%d, ' % num_partitions_given_to_operator['+'] +\
-                        '%d, ' % num_partitions_given_to_operator['IN'] +\
-                        '%d, ' % num_partitions_given_to_operator['OUT'] +\
-                        '%d, ' % num_vars +\
-                        '%d, ' % num_constrs +\
-                        "gurobi error " + str(e.errno) + "\n"
-                print(log_string)
-                log_file = open(file_helper.log_file, "a+")
-                log_file.write(log_string)
-                log_file.close()
+            # except GurobiError as e:
+            #     print('Error code ' + str(e.errno) + ": " + str(e))
+            #     t1 = timeit.default_timer()
+            #     log_string = "Gurobi ERROR -" + log_string
+            #     log_string = '%s, ' % file_helper.benchmark_name +\
+            #             '%d, ' % device.Nx +\
+            #             '%d, ' % device.Ny+\
+            #             '%d, ' % device.unroll_factor +\
+            #             '%d, ' % device.P +\
+            #             '%d, ' % device.physical_channels +\
+            #             '%d, ' % device.IO_O +\
+            #             '%d, ' % device.T +\
+            #             '%d, ' % device.II+\
+            #             '%f, ' % place_time.seconds +\
+            #             '%f, ' % '-1' +\
+            #             '%d, ' % current_run_count +\
+            #             '%s, ' % tag +\
+            #             '%d, ' % num_partitions_given_to_operator['*'] +\
+            #             '%d, ' % num_partitions_given_to_operator['+'] +\
+            #             '%d, ' % num_partitions_given_to_operator['IN'] +\
+            #             '%d, ' % num_partitions_given_to_operator['OUT'] +\
+            #             '%d, ' % num_vars +\
+            #             '%d, ' % num_constrs +\
+            #             "gurobi error " + str(e.errno) + "\n"
+            #     print(log_string)
+            #     log_file = open(file_helper.log_file, "a+")
+            #     log_file.write(log_string)
+            #     log_file.close()
 
-                current_run_count = run_count()
+            #     current_run_count = run_count()
             # except AttributeError:
             #     log_string = '#%s, ' % benchmark + '%d, ' % device.Nx + '%d, ' % device.Ny+ '%d, ' % device.P + '%d, ' % device.physical_channels +'%d, ' % device.T+'%d, ' % device.II
             #     print(' Gurobi encountered an attribute error')

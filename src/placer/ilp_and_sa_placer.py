@@ -1,13 +1,13 @@
 from .base import PlacerStrategy
 
-from .partitioner import partition_with_ilp
+from .partitioner import partition_with_ilp_scip
 from .sa_placers import initialize_state, topographical_swap, debug_energy
 from .sa_placers import QuadraticWirelengthAnnealingPlacer, LinearWirelengthAnnealingPlacer, AnnealingCongestionAwarePlacer,BoundingBoxPlacer
 class IlpAndSimulatedAnnealingPlacer( PlacerStrategy ):
     # Use ILP partitioning
     def place( self, dataflow_hypergraph, K, num_partitions_given_to_operator, partition_filename, II,time,Nx,Ny, log_dir='.', placement_constraints=""):
 
-        dfg_v_to_partition_id, partitioned_op_map = partition_with_ilp( dataflow_hypergraph, K, num_partitions_given_to_operator, partition_filename, II, log_dir )
+        dfg_v_to_partition_id, partitioned_op_map = partition_with_ilp_scip( dataflow_hypergraph, K, num_partitions_given_to_operator, partition_filename, II, log_dir )
 
         print( '\n--------------Placement--------------\n' )
 

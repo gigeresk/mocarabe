@@ -1,3 +1,11 @@
+# TODO for cgra-ilp/Mocarabe
+This code has fallen behind.  Here are some goals to make it run more easily on modern systems:
+- Get rid of errors (esp python)
+- Add a non-gurobi ilp mode (GLPK,HiGHS)
+- Look into sat solvers and the like
+- Add basic test suite
+- Rewrite the gcc stuff to be either a llvm backend or...
+
 # README for cgra-ilp/Mocarabe
 
 There are three major components for setup: Gurobi installation, cgra-ilp dependency installation, and gcc-python-plugin setup

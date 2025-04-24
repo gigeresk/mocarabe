@@ -1,7 +1,5 @@
-import sys
 import math
 import timeit
-import func_timeout as timeout
 from gurobipy import *
 
 def partition_operator( operator_ranges, partition ):

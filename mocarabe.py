@@ -33,7 +33,7 @@ parser.add_argument('--tag', metavar='tag for logging', type=str, default="-", h
 parser.add_argument('--place_time', metavar='placement duration (minutes)', type=float, default=0.01, help="max duration for cgra placement")
 # parser.add_argument('-T', metavar='schedule length', type=int, default = 0, help='schedule length (optional upper bound)')
 parser.add_argument('--unroll', help='DFG unroll factor, default is 1, 0 for automatic unroll (max is II)', type=int, default = 1)
-parser.add_argument('--sched_method', metavar='scheduling_method', type=str, default='ILP', help="sched method, either ILP or PF")
+parser.add_argument('--sched_method', metavar='scheduling_method', type=str, default='PF', help="sched method, either ILP or PF")
 parser.add_argument('-iod', metavar='io diffusion', type=float, default=1.0)
 parser.add_argument('-ard', metavar='arith diffusion', type=float, default=1.0)
 
@@ -73,8 +73,6 @@ if io_diffusion > II:
     warnings.warn(f"{bcolors.WARNING}iod > II: trying to pack more input nodes in a PE than the modulo schedule can handle{bcolors.ENDC}")
 if arith_diffusion > II:
     warnings.warn(f"{bcolors.WARNING}ard > II: trying to pack more operations in a PE than the modulo schedule can handle{bcolors.ENDC}")
-if sched_method == 'PF':
-    warnings.warn(f"{bcolors.WARNING}PathFinder not recommended: use ILP scheduler if possible{bcolors.ENDC}")
 
 assert( os.path.exists( dfg_dir ) ), f"{os.path.realpath(dfg_dir)} does not exist.  Have you run gcc?"
 assert( sched_method == 'ILP' or sched_method == 'PF' ),  "sched_method must be either 'ILP' or 'PF' "

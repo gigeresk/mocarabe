@@ -8,7 +8,7 @@ import time
 
 from datetime import datetime
 import func_timeout as timeout
-from gurobipy import *
+# from gurobipy import *
 import numpy as np
 import timeit
 # # -*- coding: future_fstrings -*-

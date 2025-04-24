@@ -1,25 +1,21 @@
 
-import json
-import os
-import re
-from collections import OrderedDict
+import collections # for OrderedDict
 
-try:
-    import networkx as nx
-except:
-    print("pip3 install networkx")
-try:
-    import palettable
-except:
-    print("pip3 install palettable")
+import networkx as nx
+import palettable
+# try:
+#     import networkx as nx
+# except:
+#     print("pip3 install networkx")
+# try:
+#     import palettable
+# except:
+#     print("pip3 install palettable")
 
 from halp.directed_hypergraph import DirectedHypergraph
 from halp.utilities import directed_statistics
 from networkx.algorithms.dag import topological_sort
 from networkx.algorithms.shortest_paths.generic import has_path
-
-import collections # for OrderedDict
-
 
 def serialize_df_hypergraph( self, H: DirectedHypergraph, path: str ) -> None:
     '''
@@ -371,7 +367,7 @@ def get_all_root_nodes( self ):
 
     return list( set_of_nodes )
 def get_predecessors( self, node ):
-    predecessors = OrderedDict()
+    predecessors = collections.OrderedDict()
 
     for hyperedge_id in self.ordered_hyperedge_id_iterator():
         head_nodes = self.get_hyperedge_attributes( hyperedge_id )['head']

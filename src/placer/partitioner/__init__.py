@@ -1,1 +1,1 @@
-from .ilp_partition import partition_with_ilp
+from .ilp_partition_scip import partition_with_ilp_scip

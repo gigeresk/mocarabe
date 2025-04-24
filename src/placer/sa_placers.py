@@ -1,11 +1,6 @@
-# # -*- coding: future_fstrings -*-
-
 import abc
 import random
-import functools
-
-from gurobipy import *
-import timeit
+import itertools
 from simanneal import Annealer
 
 from placement_visualizer import visualize_placement

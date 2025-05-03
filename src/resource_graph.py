@@ -181,7 +181,7 @@ class ResourceGraph( nx.DiGraph ):
         self.node_attributes_params = nx.get_node_attributes( self, 'params' )
         self.node_attributes_type = nx.get_node_attributes( self, 'type' )
 
-    def node_to_resource( self, node ):
+    def node_to_resource( self, node ) -> str:
 
         node_type = self.node_attributes_type[node]
         node_pos = self.node_attributes_params[node]

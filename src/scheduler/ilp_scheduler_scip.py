@@ -4,8 +4,6 @@ import numpy as np
 
 import pyscipopt as scip
 
-import src.device
-
 from src.resource_graph import ResourceGraph
 from .scheduled_netlist import ScheduledNetlist
 from .scheduled_net import ScheduledNet
@@ -452,7 +450,6 @@ def schedule( self, device, dataflow_mode,netlist, io_pes,boundingBoxEnabled,fil
         resource_graph = ResourceGraph( )
         resource_graph.create( device )
 
-        # todo is getLbLocal() ok?  also how do i check if feasible
         scheduled_netlist = ScheduledNetlist( resource_graph )
         for p in range(0,P):
             scheduled_net = ScheduledNet()
@@ -492,10 +489,3 @@ def schedule( self, device, dataflow_mode,netlist, io_pes,boundingBoxEnabled,fil
         print("Wrote solution to {0}".format(solFilename))
 
         return scheduled_netlist, num_vars, num_constrs
-
-if __name__ == "__main__":
-
-    device_ = device.Device( Nx=8, Ny=9, C=2, T=2, IO_I=2,IO_O=1, layout='', pe_pipelining_stages=2, noc_pipelining_stages=2, unroll=4, P=140, II=2 )
-    dataflow_mode = False
-
-    schedule( 0, device_, dataflow_mode,netlist=0, io_pes=[],boundingBoxEnabled=False,file_name='proj/int_gaussian_--28-11-20-22.34.33/netlist/int_gaussian.net', benchmark='int_gaussian', solFilename='gargo.sol', file_helper=None )

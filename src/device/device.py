@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class Device:
     """Container for device configuration"""
@@ -7,7 +8,7 @@ class Device:
     Ny: int
     physical_channels: int
     T: int
-    schedule_length: int # make this T
+    schedule_length: int  # make this T
     IO_I: int
     IO_O: int
     layout: int

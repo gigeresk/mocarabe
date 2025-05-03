@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
-def create_placed_netlist( H, dfg_node_to_pe_xy_map, with_attributes=True ):
+
+def create_placed_netlist(H, dfg_node_to_pe_xy_map, with_attributes=True):
 
     placed_netlist = []
     for hyperedge_id in H.ordered_hyperedge_id_iterator():
@@ -9,7 +10,8 @@ def create_placed_netlist( H, dfg_node_to_pe_xy_map, with_attributes=True ):
 
         source = hyperedge['tail'][0]
         xy = dfg_node_to_pe_xy_map[source]
-        src = ( xy[0], xy[1], int( source ), H.get_node_attribute(source,'label'), hyperedge_id )
+        src = (xy[0], xy[1], int(source), H.get_node_attribute(
+            source, 'label'), hyperedge_id)
 
         sinks = []
 
@@ -18,8 +20,9 @@ def create_placed_netlist( H, dfg_node_to_pe_xy_map, with_attributes=True ):
         for sink in unique_sink_ids:
             xy = dfg_node_to_pe_xy_map[sink]
 
-            sinks.append( ( xy[0], xy[1], int( sink ), H.get_node_attribute(sink,'label') ) )
+            sinks.append((xy[0], xy[1], int(sink),
+                         H.get_node_attribute(sink, 'label')))
 
-        placed_netlist.append( (src, sinks) )
+        placed_netlist.append((src, sinks))
     # import pdb; pdb.set_trace()
     return placed_netlist

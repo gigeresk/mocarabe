@@ -10,11 +10,12 @@ Diff:
   unique names (and replacing x,y,c with actual values)
 Don't leave these for synthesis.  This is an easier way to verify correctness
 '''
-def mocarabe_tb_gen( rtl_dir, Nx, Ny, C ):
 
+
+def mocarabe_tb_gen(rtl_dir, Nx, Ny, C):
 
     top = \
-    '''
+        '''
 `include "mocarabe.h"
 `include "benchmark.h"
 
@@ -70,16 +71,16 @@ module mocarabe #(
     end
 
 '''
-    print( top )
+    print(top)
 
     instances_string = ""
     pe_instances_string = ""
 
-    for y in range( Ny ):
-        for x in range( Nx ):
+    for y in range(Ny):
+        for x in range(Nx):
 
             instances_string = instances_string + \
-f'''
+                f'''
 pe #(
     .SCHED_LEN(SCHED_LEN),
     .X_MAX(X_MAX),
@@ -114,11 +115,11 @@ mux_inst_x{x}_y{y}
     .out1(mux_to_pe1[({x}) + ({y})*X_MAX])
 );
 '''
-    for y in range( Ny ):
-            for x in range( Nx ):
-                for c in range( C ):
-                    instances_string = instances_string +  \
-f'''
+    for y in range(Ny):
+        for x in range(Nx):
+            for c in range(C):
+                instances_string = instances_string +  \
+                    f'''
 torus_switch #(
     .SCHED_LEN(SCHED_LEN),
     .X_MAX(X_MAX),
@@ -140,13 +141,10 @@ torus_switch #(
         .e_out(horiz[({x}) + ({y})*X_MAX][{c}])
     );
     '''
-    print( instances_string )
-
-
-
+    print(instances_string)
 
     tail = \
-'''
+        '''
     assign done_all = &done;
     assign done_pe = &done_a_pe;
 `ifdef DEBUG
@@ -159,6 +157,6 @@ torus_switch #(
 endmodule
 '''
 
-    f = open( f"{rtl_dir}/mocarabe_tb.v" , "w+" )
-    f.write( top + instances_string + tail )
+    f = open(f"{rtl_dir}/mocarabe_tb.v", "w+")
+    f.write(top + instances_string + tail)
     return top + instances_string + tail

@@ -1,8 +1,9 @@
 import os
 import sys
 
-def modify_benchmark_header(path, x, y, c, DW = 32, sched_len = 4):
-    f=open(path+"/benchmark.h", "w")
+
+def modify_benchmark_header(path, x, y, c, DW=32, sched_len=4):
+    f = open(path+"/benchmark.h", "w")
     f.write("""`define BENCHMARK_DATA_WIDTH """+str(DW)+"""
 `define D_WIDTH [`BENCHMARK_DATA_WIDTH-1:0]
 `define BENCHMARK_X_WIDTH """+str(x)+"""
@@ -10,6 +11,7 @@ def modify_benchmark_header(path, x, y, c, DW = 32, sched_len = 4):
 `define BENCHMARK_SCHED_LEN """+str(sched_len)+"""
 `define BENCHMARK_CHAN_WIDTH """+str(c))
     f.close()
+
 
 def run_mocarabe():
     print("\n\nMocarabe: High-Performance Time-Multiplexed Overlays for FPGAs\n University of Waterloo\n\n")
@@ -22,9 +24,9 @@ def run_mocarabe():
         x = 10
         y = 10
         c = 3
-        batch = 1 
+        batch = 1
     os.system("python3 placement.py "+str(x)+" "+str(y)+" "+str(c))
-    modify_benchmark_header("./rtl",x, y, c)
+    modify_benchmark_header("./rtl", x, y, c)
     if batch == 1:
         print("Launching Vivado in batch mode...")
         os.system("vivado -mode batch -source cgra.tcl")
@@ -34,4 +36,3 @@ def run_mocarabe():
 
 
 run_mocarabe()
-

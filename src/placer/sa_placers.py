@@ -5,15 +5,17 @@ from simanneal import Annealer
 
 from src.placement_visualizer import visualize_placement
 
-def initialize_state( dfg_v_to_partition_id, Nx, Ny ):
+
+def initialize_state(dfg_v_to_partition_id, Nx, Ny):
 
     initial_state = [0] * Nx*Ny
-    for ix in range( len( initial_state ) ):
+    for ix in range(len(initial_state)):
         initial_state[ix] = ix
 
     return initial_state
 
-def topographical_swap( dataflow_hypergraph, partitioned_op_map,dfg_v_to_partition_id,Nx,Ny, state, swap_rounds=3,type='topological' ):
+
+def topographical_swap(dataflow_hypergraph, partitioned_op_map, dfg_v_to_partition_id, Nx, Ny, state, swap_rounds=3, type='topological'):
     ''' No placement constraints yet '''
 
     from networkx.algorithms.dag import topological_sort
@@ -26,15 +28,18 @@ def topographical_swap( dataflow_hypergraph, partitioned_op_map,dfg_v_to_partiti
 
                 node_i = node_i
                 node_j = node_j
-                if node_i == node_j: continue
+                if node_i == node_j:
+                    continue
 
-                i_is_topo_precedent = dataflow_hypergraph.is_topo_precedent( node_i, node_j )
-                j_is_topo_precedent = dataflow_hypergraph.is_topo_precedent( node_j, node_i )
+                i_is_topo_precedent = dataflow_hypergraph.is_topo_precedent(
+                    node_i, node_j)
+                j_is_topo_precedent = dataflow_hypergraph.is_topo_precedent(
+                    node_j, node_i)
 
-                i_node_partition = dfg_v_to_partition_id[ int(node_i) ]
+                i_node_partition = dfg_v_to_partition_id[int(node_i)]
                 i_node_pe = state[i_node_partition]
 
-                j_node_partition = dfg_v_to_partition_id[ int(node_j) ]
+                j_node_partition = dfg_v_to_partition_id[int(node_j)]
                 j_node_pe = state[j_node_partition]
 
                 i_node_x = i_node_pe % Nx
@@ -42,49 +47,54 @@ def topographical_swap( dataflow_hypergraph, partitioned_op_map,dfg_v_to_partiti
                 j_node_x = j_node_pe % Nx
                 j_node_y = j_node_pe // Nx
 
-                if i_is_topo_precedent: # if i comes before j in the dataflow graph
-                    if( i_node_x > j_node_x and i_node_y > j_node_y ): # if i is dominated by j
+                if i_is_topo_precedent:  # if i comes before j in the dataflow graph
+                    if (i_node_x > j_node_x and i_node_y > j_node_y):  # if i is dominated by j
                         state[j_node_partition], state[i_node_partition] = state[i_node_partition], state[j_node_partition]
                 elif j_is_topo_precedent:
-                    if( j_node_x > i_node_x and j_node_y > i_node_y ):
+                    if (j_node_x > i_node_x and j_node_y > i_node_y):
                         state[j_node_partition], state[i_node_partition] = state[i_node_partition], state[j_node_partition]
 
     return state
 
-def debug_energy( dataflow_hypergraph, partitioned_netlist,dfg_v_to_partition_id, state, Nx, Ny ):
-        e = 0
-        for hyperedge_id in list( dataflow_hypergraph.ordered_hyperedge_id_iterator() ):
-            net = dataflow_hypergraph.get_hyperedge_attributes( hyperedge_id )
-            source = net['tail'][0]
-            source_pe = dfg_v_to_partition_id[int( source )]
-            for sink in net['head']:
-                sink_pe = dfg_v_to_partition_id[ int( sink ) ]
 
-                min_distance_xy = torus_min_distance_xy( state[source_pe], state[sink_pe], Nx, Ny )
+def debug_energy(dataflow_hypergraph, partitioned_netlist, dfg_v_to_partition_id, state, Nx, Ny):
+    e = 0
+    for hyperedge_id in list(dataflow_hypergraph.ordered_hyperedge_id_iterator()):
+        net = dataflow_hypergraph.get_hyperedge_attributes(hyperedge_id)
+        source = net['tail'][0]
+        source_pe = dfg_v_to_partition_id[int(source)]
+        for sink in net['head']:
+            sink_pe = dfg_v_to_partition_id[int(sink)]
 
-                e = e + ( min_distance_xy[0] + 1) * ( min_distance_xy[1] + 1 )
-        return e
+            min_distance_xy = torus_min_distance_xy(
+                state[source_pe], state[sink_pe], Nx, Ny)
 
-#TODO docstring
-def toroidal_range( source, sink, max_ ):
+            e = e + (min_distance_xy[0] + 1) * (min_distance_xy[1] + 1)
+    return e
+
+# TODO docstring
+
+
+def toroidal_range(source, sink, max_):
     if source <= sink:
-        return list(range( source+1, sink+1 ))
+        return list(range(source+1, sink+1))
     if source > sink:
-        return list( range( source, max_ ) ) + list( range( 0, sink ) )
+        return list(range(source, max_)) + list(range(0, sink))
 
-def torus_min_distance_xy( sourcexy, sinkxy, Nx, Ny ):
+
+def torus_min_distance_xy(sourcexy, sinkxy, Nx, Ny):
     ''' (x,y) Manhattan Distance between two points (x+y) on a toroidal Nx*Ny grid '''
     source_x = sourcexy % Nx
     source_y = sourcexy // Nx
     sink_x = sinkxy % Nx
     sink_y = sinkxy // Nx
 
-    assert( source_x < Nx )
-    assert( sink_x < Nx )
-    assert( source_y < Ny )
-    assert( sink_y < Ny )
+    assert (source_x < Nx)
+    assert (sink_x < Nx)
+    assert (source_y < Ny)
+    assert (sink_y < Ny)
 
-    if( source_x <= sink_x and source_y <= sink_y ):
+    if (source_x <= sink_x and source_y <= sink_y):
         '''
         --------------
         |  / >> snk  |
@@ -92,8 +102,8 @@ def torus_min_distance_xy( sourcexy, sinkxy, Nx, Ny ):
         | src        |
         --------------
         '''
-        return (( sink_x - source_x ), ( sink_y - source_y ))
-    elif( source_x > sink_x and source_y <= sink_y ):
+        return ((sink_x - source_x), (sink_y - source_y))
+    elif (source_x > sink_x and source_y <= sink_y):
         '''
         --------------
         |  snk       |
@@ -101,8 +111,8 @@ def torus_min_distance_xy( sourcexy, sinkxy, Nx, Ny ):
         |>>/    src>>|
         --------------
         '''
-        return (( Nx + sink_x - source_x ) , ( sink_y - source_y ))
-    elif( source_x <= sink_x and source_y > sink_y ):
+        return ((Nx + sink_x - source_x), (sink_y - source_y))
+    elif (source_x <= sink_x and source_y > sink_y):
         '''
         --------------
         |  ^         |
@@ -110,7 +120,7 @@ def torus_min_distance_xy( sourcexy, sinkxy, Nx, Ny ):
         |  />>>>snk  |
         --------------
         '''
-        return (( sink_x - source_x ) , ( Ny + sink_y - source_y ))
+        return ((sink_x - source_x), (Ny + sink_y - source_y))
     else:
         '''
         ---------------
@@ -120,7 +130,8 @@ def torus_min_distance_xy( sourcexy, sinkxy, Nx, Ny ):
         |>>/^       />|
         --------------
         '''
-        return (( Nx - source_x + sink_x ) , ( Ny - source_y + sink_y ))
+        return ((Nx - source_x + sink_x), (Ny - source_y + sink_y))
+
 
 class AbstractAnnealingPlacer(Annealer):
     # historical notes
@@ -138,7 +149,7 @@ class AbstractAnnealingPlacer(Annealer):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, state, dataflow_hypergraph, partitioned_netlist,Nx,Ny,dfg_v_to_partition_id, viz_placement_dir=False ):
+    def __init__(self, state, dataflow_hypergraph, partitioned_netlist, Nx, Ny, dfg_v_to_partition_id, viz_placement_dir=False):
         super(AbstractAnnealingPlacer, self).__init__(state)
 
         self.partitioned_netlist = partitioned_netlist
@@ -151,31 +162,38 @@ class AbstractAnnealingPlacer(Annealer):
         self.memoized_source_pe_and_dest_partitions = []
 
         for hyperedge_id in list(self.dataflow_hypergraph.ordered_hyperedge_id_iterator()):
-            net = self.dataflow_hypergraph.get_hyperedge_attributes( hyperedge_id )
+            net = self.dataflow_hypergraph.get_hyperedge_attributes(
+                hyperedge_id)
             source = net['tail'][0]
-            source_pe = self.dfg_v_to_partition_id[int( source )]
+            source_pe = self.dfg_v_to_partition_id[int(source)]
             for sink in net['head']:
-                self.memoized_source_pe_and_dest_partitions.append( (source_pe, self.dfg_v_to_partition_id[ int( sink ) ]) )
+                self.memoized_source_pe_and_dest_partitions.append(
+                    (source_pe, self.dfg_v_to_partition_id[int(sink)]))
 
-        self.memoized_source_pe_and_dest_partitions = tuple(self.memoized_source_pe_and_dest_partitions)
-        self.memoized_torus_distance = [[0 for a in range(Nx*Ny)] for b in range(Nx*Ny)]
-        self.memoized_torus_distance_squared = [[0 for a in range(Nx*Ny)] for b in range(Nx*Ny)]
+        self.memoized_source_pe_and_dest_partitions = tuple(
+            self.memoized_source_pe_and_dest_partitions)
+        self.memoized_torus_distance = [
+            [0 for a in range(Nx*Ny)] for b in range(Nx*Ny)]
+        self.memoized_torus_distance_squared = [
+            [0 for a in range(Nx*Ny)] for b in range(Nx*Ny)]
 
         for source in range(Nx*Ny):
             for dest in range(Nx*Ny):
-                tmp = self.memoized_torus_distance[source][dest] = torus_min_distance_xy(source,dest,Nx,Ny)
-                self.memoized_torus_distance_squared[source][dest] = (tmp[0]+1)*(tmp[1]+1)
+                tmp = self.memoized_torus_distance[source][dest] = torus_min_distance_xy(
+                    source, dest, Nx, Ny)
+                self.memoized_torus_distance_squared[source][dest] = (
+                    tmp[0]+1)*(tmp[1]+1)
 
-    def move( self ):
-        a = int( (len(self.state)-1) * random.random())
-        b = int( (len(self.state)-1) * random.random())
+    def move(self):
+        a = int((len(self.state)-1) * random.random())
+        b = int((len(self.state)-1) * random.random())
 
         self.state[a], self.state[b] = self.state[b], self.state[a]
 
         return
 
     @abc.abstractmethod
-    def energy( self ):
+    def energy(self):
         pass
 
     # def update(self, step, T, E, acceptance, improvement):
@@ -190,25 +208,32 @@ class AbstractAnnealingPlacer(Annealer):
 
     #     self.default_update( step, T, E, acceptance, improvement )
 
+
 class QuadraticWirelengthAnnealingPlacer(AbstractAnnealingPlacer):
-    def __init__(self, state, dataflow_hypergraph, partitioned_netlist,Nx,Ny,dfg_v_to_partition_id, viz_placement_dir=False ): #TODO GET RID OF NX NY
-        super(QuadraticWirelengthAnnealingPlacer, self).__init__(state, dataflow_hypergraph, partitioned_netlist,Nx,Ny,dfg_v_to_partition_id, viz_placement_dir)
+    def __init__(self, state, dataflow_hypergraph, partitioned_netlist, Nx, Ny, dfg_v_to_partition_id, viz_placement_dir=False):  # TODO GET RID OF NX NY
+        super(QuadraticWirelengthAnnealingPlacer, self).__init__(state, dataflow_hypergraph,
+                                                                 partitioned_netlist, Nx, Ny, dfg_v_to_partition_id, viz_placement_dir)
 
     def energy(self):
         e = 0
-        for source_partition,dest_partition in self.memoized_source_pe_and_dest_partitions:
-            e += self.memoized_torus_distance_squared[self.state[source_partition]][ self.state[dest_partition] ]
+        for source_partition, dest_partition in self.memoized_source_pe_and_dest_partitions:
+            e += self.memoized_torus_distance_squared[self.state[source_partition]
+                                                      ][self.state[dest_partition]]
         return e
+
 
 class LinearWirelengthAnnealingPlacer(AbstractAnnealingPlacer):
-    def __init__(self, state, dataflow_hypergraph, partitioned_netlist,Nx,Ny,dfg_v_to_partition_id, viz_placement_dir=False ): #TODO GET RID OF NX NY
-        super(LinearWirelengthAnnealingPlacer, self).__init__(state, dataflow_hypergraph, partitioned_netlist,Nx,Ny,dfg_v_to_partition_id, viz_placement_dir)
+    def __init__(self, state, dataflow_hypergraph, partitioned_netlist, Nx, Ny, dfg_v_to_partition_id, viz_placement_dir=False):  # TODO GET RID OF NX NY
+        super(LinearWirelengthAnnealingPlacer, self).__init__(state, dataflow_hypergraph,
+                                                              partitioned_netlist, Nx, Ny, dfg_v_to_partition_id, viz_placement_dir)
 
     def energy(self):
         e = 0
-        for source_partition,dest_partition in self.memoized_source_pe_and_dest_partitions:
-            e += sum( self.memoized_torus_distance[self.state[source_partition]][ self.state[dest_partition] ] )
+        for source_partition, dest_partition in self.memoized_source_pe_and_dest_partitions:
+            e += sum(self.memoized_torus_distance[self.state[source_partition]]
+                     [self.state[dest_partition]])
         return e
+
 
 class AnnealingCongestionAwarePlacer(Annealer):
     # pass extra data (the distance matrix) into the constructor
@@ -221,7 +246,8 @@ class AnnealingCongestionAwarePlacer(Annealer):
     I got C=2 with this but only C=3 with above on this benchmark: python3 mocarabe.py -dfg hls/int_gaussian -II 1 -C 1 --place_time 1 --sched_method ILP -T 1 -iod 1 -ard 1 --unroll 3
 
     '''
-    def __init__(self, state, dataflow_hypergraph, partitioned_netlist, Nx, Ny, dfg_v_to_partition_id, viz_placement_dir=False ): #TODO GET RID OF NX NY
+
+    def __init__(self, state, dataflow_hypergraph, partitioned_netlist, Nx, Ny, dfg_v_to_partition_id, viz_placement_dir=False):  # TODO GET RID OF NX NY
         super(AnnealingCongestionAwarePlacer, self).__init__(state)
         self.dataflow_hypergraph = dataflow_hypergraph
         self.partitioned_netlist = partitioned_netlist
@@ -232,31 +258,37 @@ class AnnealingCongestionAwarePlacer(Annealer):
         self.update_count = lambda c=itertools.count(): next(c)
 
         self.memoized_source_pe_and_dest_partitions = []
-        #memoize tail(source)/head(dest) nodes, as ints.
+        # memoize tail(source)/head(dest) nodes, as ints.
         for hyperedge_id in list(self.dataflow_hypergraph.ordered_hyperedge_id_iterator()):
-            net = self.dataflow_hypergraph.get_hyperedge_attributes( hyperedge_id )
+            net = self.dataflow_hypergraph.get_hyperedge_attributes(
+                hyperedge_id)
             source = net['tail'][0]
-            source_pe = self.dfg_v_to_partition_id[int( source )]
+            source_pe = self.dfg_v_to_partition_id[int(source)]
 
             # not exactly the same as non-routing-aware placer
             dest_pes = []
             for sink in net['head']:
-                dest_pes.append( self.dfg_v_to_partition_id[ int( sink ) ] )
+                dest_pes.append(self.dfg_v_to_partition_id[int(sink)])
 
-            self.memoized_source_pe_and_dest_partitions.append( (source_pe, dest_pes ) )
+            self.memoized_source_pe_and_dest_partitions.append(
+                (source_pe, dest_pes))
 
-        self.memoized_Nx_toroidal_range = [[0 for a in range(Nx)] for b in range(Nx)]
+        self.memoized_Nx_toroidal_range = [
+            [0 for a in range(Nx)] for b in range(Nx)]
         for source in range(Nx):
             for dest in range(Nx):
-                self.memoized_Nx_toroidal_range[source][dest] = toroidal_range( source, dest, Nx )
-        self.memoized_Ny_toroidal_range = [[0 for a in range(Ny)] for b in range(Ny)]
+                self.memoized_Nx_toroidal_range[source][dest] = toroidal_range(
+                    source, dest, Nx)
+        self.memoized_Ny_toroidal_range = [
+            [0 for a in range(Ny)] for b in range(Ny)]
         for source in range(Ny):
             for dest in range(Ny):
-                self.memoized_Ny_toroidal_range[source][dest] = toroidal_range( source, dest, Ny )
+                self.memoized_Ny_toroidal_range[source][dest] = toroidal_range(
+                    source, dest, Ny)
 
-    def move( self ):
-        a = int( (len(self.state)-1) * random.random())
-        b = int( (len(self.state)-1) * random.random())
+    def move(self):
+        a = int((len(self.state)-1) * random.random())
+        b = int((len(self.state)-1) * random.random())
 
         self.state[a], self.state[b] = self.state[b], self.state[a]
 
@@ -265,8 +297,8 @@ class AnnealingCongestionAwarePlacer(Annealer):
     def energy(self):
         ''' Bad for high-fanout, good for everything else (maybe: unproven) '''
         # XY ROUTING
-        congestion_h = [[0] * self.Ny ] * self.Nx
-        congestion_v = [[0] * self.Ny ] * self.Nx
+        congestion_h = [[0] * self.Ny] * self.Nx
+        congestion_v = [[0] * self.Ny] * self.Nx
 
         for source_partition, dest_partitions in self.memoized_source_pe_and_dest_partitions:
             for dest_partition in dest_partitions:
@@ -280,13 +312,12 @@ class AnnealingCongestionAwarePlacer(Annealer):
 
                 for y_to_traverse in self.memoized_Ny_toroidal_range[source_y][sink_y]:
                     congestion_v[sink_x][y_to_traverse] += 1
-        e=0
-        for x in range( self.Nx ):
-            for y in range( self.Ny ):
+        e = 0
+        for x in range(self.Nx):
+            for y in range(self.Ny):
                 e += congestion_h[x][y] + congestion_v[x][y]
 
         return e
-
 
     # def update(self, step, T, E, acceptance, improvement):
 
@@ -300,22 +331,23 @@ class AnnealingCongestionAwarePlacer(Annealer):
 
         # self.default_update( step, T, E, acceptance, improvement )
 
-def bbox_generator( sourcexy, sinkxy, Nx, Ny ):
+
+def bbox_generator(sourcexy, sinkxy, Nx, Ny):
     ''' (x,y) Manhattan Distance between two points (x+y) on a toroidal Nx*Ny grid '''
     source_x = sourcexy % Nx
     source_y = sourcexy // Nx
     sink_x = sinkxy % Nx
     sink_y = sinkxy // Nx
 
-    assert( source_x < Nx )
-    assert( sink_x < Nx )
-    assert( source_y < Ny )
-    assert( sink_y < Ny )
+    assert (source_x < Nx)
+    assert (sink_x < Nx)
+    assert (source_y < Ny)
+    assert (sink_y < Ny)
 
     x_to_increment = []
     y_to_increment = []
 
-    if( source_x <= sink_x and source_y <= sink_y ):
+    if (source_x <= sink_x and source_y <= sink_y):
         '''
         --------------
         |  / >> snk  |
@@ -324,15 +356,15 @@ def bbox_generator( sourcexy, sinkxy, Nx, Ny ):
         --------------
         '''
 
-        x_to_increment = list( range( source_x, sink_x+1))
-        y_to_increment = list( range( source_y, sink_y+1))
+        x_to_increment = list(range(source_x, sink_x+1))
+        y_to_increment = list(range(source_y, sink_y+1))
         ret = []
         for x in x_to_increment:
             for y in y_to_increment:
-                ret.append( (x,y))
-        return tuple(ret) #x_to_increment, y_to_increment
+                ret.append((x, y))
+        return tuple(ret)  # x_to_increment, y_to_increment
         # return (( sink_x - source_x ), ( sink_y - source_y ))
-    elif( source_x > sink_x and source_y <= sink_y ):
+    elif (source_x > sink_x and source_y <= sink_y):
         '''
         --------------
         |  snk       |
@@ -341,15 +373,15 @@ def bbox_generator( sourcexy, sinkxy, Nx, Ny ):
         --------------
         '''
 
-        x_to_increment = list( range( source_x, Nx)) +list(range(0,sink_x+1))
-        y_to_increment = list( range( source_y, sink_y+1))
+        x_to_increment = list(range(source_x, Nx)) + list(range(0, sink_x+1))
+        y_to_increment = list(range(source_y, sink_y+1))
         ret = []
         for x in x_to_increment:
             for y in y_to_increment:
-                ret.append( (x,y))
-        return tuple(ret) #x_to_increment, y_to_increment
+                ret.append((x, y))
+        return tuple(ret)  # x_to_increment, y_to_increment
         # return (( Nx + sink_x - source_x ) , ( sink_y - source_y ))
-    elif( source_x <= sink_x and source_y > sink_y ):
+    elif (source_x <= sink_x and source_y > sink_y):
         '''
         --------------
         |  ^         |
@@ -357,13 +389,13 @@ def bbox_generator( sourcexy, sinkxy, Nx, Ny ):
         |  />>>>snk  |
         --------------
         '''
-        x_to_increment = list( range( source_x, sink_x+1))
-        y_to_increment = list( range( source_y, Ny)) +list(range(0,sink_y+1))
+        x_to_increment = list(range(source_x, sink_x+1))
+        y_to_increment = list(range(source_y, Ny)) + list(range(0, sink_y+1))
         ret = []
         for x in x_to_increment:
             for y in y_to_increment:
-                ret.append( (x,y))
-        return tuple(ret) #x_to_increment, y_to_increment
+                ret.append((x, y))
+        return tuple(ret)  # x_to_increment, y_to_increment
         # return (( sink_x - source_x ) , ( Ny + sink_y - source_y ))
     else:
         '''
@@ -375,13 +407,13 @@ def bbox_generator( sourcexy, sinkxy, Nx, Ny ):
         --------------
         '''
 
-        x_to_increment = list( range( source_x, Nx)) +list(range(0,sink_x+1))
-        y_to_increment = list( range( source_y, Ny)) +list(range(0,sink_y+1))
+        x_to_increment = list(range(source_x, Nx)) + list(range(0, sink_x+1))
+        y_to_increment = list(range(source_y, Ny)) + list(range(0, sink_y+1))
         ret = []
         for x in x_to_increment:
             for y in y_to_increment:
-                ret.append( (x,y))
-        return tuple(ret) #x_to_increment, y_to_increment
+                ret.append((x, y))
+        return tuple(ret)  # x_to_increment, y_to_increment
 
 
 # def crange(start, end, modulo):
@@ -409,7 +441,8 @@ class BoundingBoxPlacer(Annealer):
     I got C=2 with this but only C=3 with above on this benchmark: python3 mocarabe.py -dfg hls/int_gaussian -II 1 -C 1 --place_time 1 --sched_method ILP -T 1 -iod 1 -ard 1 --unroll 3
 
     '''
-    def __init__(self, state, dataflow_hypergraph, partitioned_netlist, Nx, Ny, dfg_v_to_partition_id, viz_placement_dir=False ): #TODO GET RID OF NX NY
+
+    def __init__(self, state, dataflow_hypergraph, partitioned_netlist, Nx, Ny, dfg_v_to_partition_id, viz_placement_dir=False):  # TODO GET RID OF NX NY
         super(BoundingBoxPlacer, self).__init__(state)
 
         self.dataflow_hypergraph = dataflow_hypergraph
@@ -421,33 +454,44 @@ class BoundingBoxPlacer(Annealer):
         self.update_count = lambda c=itertools.count(): next(c)
 
         self.memoized_source_pe_and_dest_partitions = []
-        #memoize tail(source)/head(dest) nodes, as ints.
+        # memoize tail(source)/head(dest) nodes, as ints.
         for hyperedge_id in list(self.dataflow_hypergraph.ordered_hyperedge_id_iterator()):
-            net = self.dataflow_hypergraph.get_hyperedge_attributes( hyperedge_id )
+            net = self.dataflow_hypergraph.get_hyperedge_attributes(
+                hyperedge_id)
             source = net['tail'][0]
-            source_pe = self.dfg_v_to_partition_id[int( source )]
+            source_pe = self.dfg_v_to_partition_id[int(source)]
             for sink in net['head']:
-                self.memoized_source_pe_and_dest_partitions.append( (source_pe, self.dfg_v_to_partition_id[ int( sink ) ]) )
+                self.memoized_source_pe_and_dest_partitions.append(
+                    (source_pe, self.dfg_v_to_partition_id[int(sink)]))
 
-        self.memoized_Nx_toroidal_range = [[0 for a in range(Nx)] for b in range(Nx)]
+        self.memoized_Nx_toroidal_range = [
+            [0 for a in range(Nx)] for b in range(Nx)]
         for source in range(Nx):
             for dest in range(Nx):
-                self.memoized_Nx_toroidal_range[source][dest] = toroidal_range( source, dest, Nx )
-        self.memoized_Ny_toroidal_range = [[0 for a in range(Ny)] for b in range(Ny)]
+                self.memoized_Nx_toroidal_range[source][dest] = toroidal_range(
+                    source, dest, Nx)
+        self.memoized_Ny_toroidal_range = [
+            [0 for a in range(Ny)] for b in range(Ny)]
 
         for source in range(Ny):
             for dest in range(Ny):
-                self.memoized_Ny_toroidal_range[source][dest] = toroidal_range( source, dest, Ny )
-        self.memoized_bbox_generator = [[0 for a in range(Nx*Ny)] for b in range(Nx*Ny)]
-        self.memoized_congestion = [[0 for a in range(Nx*Ny)] for b in range(Nx*Ny)]
+                self.memoized_Ny_toroidal_range[source][dest] = toroidal_range(
+                    source, dest, Ny)
+        self.memoized_bbox_generator = [
+            [0 for a in range(Nx*Ny)] for b in range(Nx*Ny)]
+        self.memoized_congestion = [
+            [0 for a in range(Nx*Ny)] for b in range(Nx*Ny)]
         for source in range(Nx*Ny):
             for dest in range(Nx*Ny):
-                self.memoized_bbox_generator[source][dest] = bbox_generator( source, dest, Nx, Ny)
+                self.memoized_bbox_generator[source][dest] = bbox_generator(
+                    source, dest, Nx, Ny)
 
-                self.memoized_congestion[source][dest] = len(bbox_generator( source, dest, Nx, Ny))
-    def move( self ):
-        a = int( (len(self.state)-1) * random.random())
-        b = int( (len(self.state)-1) * random.random())
+                self.memoized_congestion[source][dest] = len(
+                    bbox_generator(source, dest, Nx, Ny))
+
+    def move(self):
+        a = int((len(self.state)-1) * random.random())
+        b = int((len(self.state)-1) * random.random())
 
         self.state[a], self.state[b] = self.state[b], self.state[a]
 
@@ -456,9 +500,10 @@ class BoundingBoxPlacer(Annealer):
     def energy(self):
 
         # congestion = [[0] * self.Ny ] * self.Nx
-        congestion=0
-        for source_partition,dest_partition in self.memoized_source_pe_and_dest_partitions:
-            congestion+=self.memoized_congestion[self.state[source_partition]][self.state[dest_partition]]
+        congestion = 0
+        for source_partition, dest_partition in self.memoized_source_pe_and_dest_partitions:
+            congestion += self.memoized_congestion[self.state[source_partition]
+                                                   ][self.state[dest_partition]]
         return congestion
         #     xy_to_increment = self.memoized_bbox_generator[self.state[source_partition]][self.state[dest_partition]]
 

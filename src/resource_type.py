@@ -1,6 +1,7 @@
 import enum
 
-class ResourceType( enum.Enum ):
+
+class ResourceType(enum.Enum):
     PE = 1
     PE_IN = 2
     PE_IN_PORT = 3

@@ -1,7 +1,8 @@
 from halp.directed_hypergraph import DirectedHypergraph
 
-class DataflowHypergraph( DirectedHypergraph ):
-    def __init__( self, dfg_path='', unroll_factor=1 ):
+
+class DataflowHypergraph(DirectedHypergraph):
+    def __init__(self, dfg_path='', unroll_factor=1):
 
         super(DataflowHypergraph, self).__init__()
         self.number_of_hedges = 0
@@ -9,8 +10,8 @@ class DataflowHypergraph( DirectedHypergraph ):
 
         self.name = ""
         if dfg_path != '':
-            self.deserialize_df_hypergraph( dfg_path )
-            self.unroll_dfg( unroll_factor )
+            self.deserialize_df_hypergraph(dfg_path)
+            self.unroll_dfg(unroll_factor)
 
     from ._dataflow_hypergraph import serialize_df_hypergraph, deserialize_df_hypergraph, unroll_dfg
     from ._dataflow_hypergraph import num_retiming_registers

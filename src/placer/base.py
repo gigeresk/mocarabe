@@ -1,5 +1,6 @@
 import abc
 
+
 class PlacerStrategy(metaclass=abc.ABCMeta):
     '''
     Partitioning and placement is done within a placer stragy.
@@ -7,5 +8,5 @@ class PlacerStrategy(metaclass=abc.ABCMeta):
     '''
 
     @abc.abstractmethod
-    def place( self ):
+    def place(self):
         pass

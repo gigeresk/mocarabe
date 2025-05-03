@@ -10,18 +10,19 @@ import timeit
 
 from .pathfinder_scheduler import UnroutableError
 
+
 class SchedulerStrategy(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def schedule( self ):
+    def schedule(self):
         pass
 
-    def run_scheduling_with_timeout( self, device, netlist, place_time, file_helper,num_partitions_given_to_operator, tag ):
+    def run_scheduling_with_timeout(self, device, netlist, place_time, file_helper, num_partitions_given_to_operator, tag):
         if not os.path.exists('log'):
-            print( "Creating 'log' directory")
+            print("Creating 'log' directory")
             os.makedirs('log')
         if not os.path.exists('results'):
-            print( "Creating 'results' directory")
+            print("Creating 'results' directory")
             os.makedirs('results')
 
         rerun = True
@@ -31,12 +32,12 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
         io_pes = []
         boundingBoxEnabled = False
 
-        assert( device.Nx > 0 ), 'Nx must be defined and > 0'
-        assert( device.Ny > 0 ), 'Ny must be defined and > 0'
-        assert( device.P > 0 ), 'P must be defined and > 0'
-        assert( device.physical_channels > 0 ), 'C must be defined and > 0'
-        assert( device.T > 0 ), 'T must be defined and >= 0'
-        assert( device.IO_O > 0 ), 'IO_I must be defined and > 0'
+        assert (device.Nx > 0), 'Nx must be defined and > 0'
+        assert (device.Ny > 0), 'Ny must be defined and > 0'
+        assert (device.P > 0), 'P must be defined and > 0'
+        assert (device.physical_channels > 0), 'C must be defined and > 0'
+        assert (device.T > 0), 'T must be defined and >= 0'
+        assert (device.IO_O > 0), 'IO_I must be defined and > 0'
         schedule_start = datetime.now()
         if '*' not in num_partitions_given_to_operator:
             num_partitions_given_to_operator['*'] = 0
@@ -46,74 +47,79 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
             num_partitions_given_to_operator['IN'] = 0
         if 'OUT' not in num_partitions_given_to_operator:
             num_partitions_given_to_operator['OUT'] = 0
-        run_count = lambda c=itertools.count(1): next(c)
+
+        def run_count(c=itertools.count(1)): return next(c)
         current_run_count = run_count()
 
-        if not os.path.exists( file_helper.log_file ):
+        if not os.path.exists(file_helper.log_file):
             # header: always keep up to date
             log_file = open(file_helper.log_file, "a+")
             header_string = '%s, ' % file_helper.benchmark_name +\
-                'Nx, '              +\
-                'Ny, '              +\
-                'unroll_factor, '   +\
-                'P, '               +\
-                'C, '               +\
-                'IO_O, '            +\
-                'T, '               +\
-                'II, '              +\
-                'place_time, '      +\
-                'schedule_time, '   +\
-                'run_count, '       +\
-                'tag (special), '   +\
-                '*, '               +\
-                '+, '               +\
-                'IN, '              +\
-                'OUT, '             +\
-                'NumVars, '         +\
-                'NumConstrs, '      +\
+                'Nx, ' +\
+                'Ny, ' +\
+                'unroll_factor, ' +\
+                'P, ' +\
+                'C, ' +\
+                'IO_O, ' +\
+                'T, ' +\
+                'II, ' +\
+                'place_time, ' +\
+                'schedule_time, ' +\
+                'run_count, ' +\
+                'tag (special), ' +\
+                '*, ' +\
+                '+, ' +\
+                'IN, ' +\
+                'OUT, ' +\
+                'NumVars, ' +\
+                'NumConstrs, ' +\
                 ", success\n"
-            log_file.write( header_string )
+            log_file.write(header_string)
             log_file.close()
 
         while current_run_count < MAX_RUN_COUNT:
             try:
 
-                log_string = "#starting: %s, " % file_helper.benchmark_name + '%d, ' % device.Nx + '%d, ' % device.Ny+ '%d, ' % device.P + '%d, ' % device.physical_channels +'%d, ' % device.T+'%d, ' % device.II+'%s, ' % tag
+                log_string = "#starting: %s, " % file_helper.benchmark_name + '%d, ' % device.Nx + '%d, ' % device.Ny + \
+                    '%d, ' % device.P + '%d, ' % device.physical_channels + \
+                    '%d, ' % device.T+'%d, ' % device.II+'%s, ' % tag
                 dateTimeObj = datetime.now()
-                log_string = log_string + ' at {0}\n'.format(dateTimeObj.strftime("%d-%m-%y_%H:%M:%S"))
+                log_string = log_string + \
+                    ' at {0}\n'.format(
+                        dateTimeObj.strftime("%d-%m-%y_%H:%M:%S"))
 
-                print( log_string )
+                print(log_string)
 
                 log_file = open(file_helper.log_file, "a+")
                 log_file.write(log_string)
                 log_file.close()
 
-                scheduled_netlist, num_vars, num_constrs = timeout.func_timeout( TIMEOUT_IN_SECONDS, self.schedule, args=(\
-                    [ device, dataflow_mode, netlist, io_pes, boundingBoxEnabled, file_helper.netlist_filepath, file_helper.benchmark_name, file_helper.schedule_filepath, file_helper]))
+                scheduled_netlist, num_vars, num_constrs = timeout.func_timeout(TIMEOUT_IN_SECONDS, self.schedule, args=(
+                    [device, dataflow_mode, netlist, io_pes, boundingBoxEnabled, file_helper.netlist_filepath, file_helper.benchmark_name, file_helper.schedule_filepath, file_helper]))
 
                 schedule_time = datetime.now() - schedule_start
                 log_string = '%s, ' % file_helper.benchmark_name +\
-                        '%d, ' % device.Nx +\
-                        '%d, ' % device.Ny+\
-                        '%d, ' % device.unroll_factor +\
-                        '%d, ' % device.P +\
-                        '%d, ' % device.physical_channels +\
-                        '%d, ' % device.IO_O +\
-                        '%d, ' % device.T +\
-                        '%d, ' % device.II+\
-                        '%f, ' % place_time.seconds +\
-                        '%f, ' % schedule_time.seconds +\
-                        '%d, ' % current_run_count +\
-                        '%s, ' % tag +\
-                        '%d, ' % num_partitions_given_to_operator['*'] +\
-                        '%d, ' % num_partitions_given_to_operator['+'] +\
-                        '%d, ' % num_partitions_given_to_operator['IN'] +\
-                        '%d, ' % num_partitions_given_to_operator['OUT'] +\
-                        '%d, ' % num_partitions_given_to_operator['OUT'] +\
-                        '%d, ' % num_partitions_given_to_operator['OUT'] +\
-                        '%d, ' % num_vars +\
-                        '%d, ' % num_constrs +\
-                        ", success "
+                    '%d, ' % device.Nx +\
+                    '%d, ' % device.Ny +\
+                    '%d, ' % device.unroll_factor +\
+                    '%d, ' % device.P +\
+                    '%d, ' % device.physical_channels +\
+                    '%d, ' % device.IO_O +\
+                    '%d, ' % device.T +\
+                    '%d, ' % device.II +\
+                    '%f, ' % place_time.seconds +\
+                    '%f, ' % schedule_time.seconds +\
+                    '%d, ' % current_run_count +\
+                    '%s, ' % tag +\
+                    '%d, ' % num_partitions_given_to_operator['*'] +\
+                    '%d, ' % num_partitions_given_to_operator['+'] +\
+                    '%d, ' % num_partitions_given_to_operator['IN'] +\
+                    '%d, ' % num_partitions_given_to_operator['OUT'] +\
+                    '%d, ' % num_partitions_given_to_operator['OUT'] +\
+                    '%d, ' % num_partitions_given_to_operator['OUT'] +\
+                    '%d, ' % num_vars +\
+                    '%d, ' % num_constrs +\
+                    ", success "
 
                 ''' write to file'''
                 # file_helper.schedule_filepath = file_helper.schedule_filepath = file_helper.schedule_dir  +'-ggNx%d-Ny%d-C%d-P%d-T%d.sol' % ( device.Nx, device.Ny, device.physical_channels, device.P, device.T)
@@ -122,8 +128,10 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
                 # solFile.close()
 
                 dateTimeObj = datetime.now()
-                log_string = log_string + '#done at {0}\n'.format(dateTimeObj.strftime("%d-%m-%y_%H:%M:%S"))
-                print( log_string )
+                log_string = log_string + \
+                    '#done at {0}\n'.format(
+                        dateTimeObj.strftime("%d-%m-%y_%H:%M:%S"))
+                print(log_string)
 
                 log_file = open(file_helper.log_file, "a+")
 
@@ -200,11 +208,13 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
             #     Run.count = Run.count + 1
             except AssertionError:
                 print('Encountered an assertion error')
-                log_string = '#%s, ' % file_helper.benchmark_name + '%d, ' % device.Nx + '%d, ' % device.Ny+ '%d, ' % device.P + '%d, ' % device.physical_channels +'%d, ' % device.T+'%d, ' % device.II
+                log_string = '#%s, ' % file_helper.benchmark_name + '%d, ' % device.Nx + '%d, ' % device.Ny + \
+                    '%d, ' % device.P + '%d, ' % device.physical_channels + \
+                    '%d, ' % device.T+'%d, ' % device.II
                 print(f'rerun: {rerun}')
 
-                if rerun: #TODO??
-                    if device.T==1:
+                if rerun:  # TODO??
+                    if device.T == 1:
                         print('Re-running assuming we did not allocate enough C')
                         log_string = log_string + "re-running assuming we did not allocate enough C\n"+'%d'
                     else:
@@ -216,13 +226,13 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
                     log_string = "ASSERTION ERROR -" + log_string
                     log_string += '%s, ' % file_helper.benchmark_name +\
                         '%d, ' % device.Nx +\
-                        '%d, ' % device.Ny+\
+                        '%d, ' % device.Ny +\
                         '%d, ' % device.unroll_factor +\
                         '%d, ' % device.P +\
                         '%d, ' % device.physical_channels +\
                         '%d, ' % device.IO_O +\
                         '%d, ' % device.T +\
-                        '%d, ' % device.II+\
+                        '%d, ' % device.II +\
                         '%f, ' % place_time.seconds +\
                         '%f, ' % '-1' +\
                         '%d, ' % current_run_count +\
@@ -242,11 +252,13 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
                 current_run_count = run_count()
             except UnroutableError:
                 print('Encountered an unroutable error')
-                log_string = '#%s, ' % file_helper.benchmark_name + '%d, ' % device.Nx + '%d, ' % device.Ny+ '%d, ' % device.P + '%d, ' % device.physical_channels +'%d, ' % device.T+'%d, ' % device.II
+                log_string = '#%s, ' % file_helper.benchmark_name + '%d, ' % device.Nx + '%d, ' % device.Ny + \
+                    '%d, ' % device.P + '%d, ' % device.physical_channels + \
+                    '%d, ' % device.T+'%d, ' % device.II
                 print(f'rerun: {rerun}')
 
                 if rerun:
-                    if device.T==1:
+                    if device.T == 1:
                         print('unrRe-running assuming we did not allocate enough C')
                         log_string = log_string + "re-running assuming we did not allocate enough C\n"+'%d'
                     else:
@@ -258,13 +270,13 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
                     log_string = "UNROUTABLE ERROR -" + log_string
                     log_string += '%s, ' % file_helper.benchmark_name +\
                         '%d, ' % device.Nx +\
-                        '%d, ' % device.Ny+\
+                        '%d, ' % device.Ny +\
                         '%d, ' % device.unroll_factor +\
                         '%d, ' % device.P +\
                         '%d, ' % device.physical_channels +\
                         '%d, ' % device.IO_O +\
                         '%d, ' % device.T +\
-                        '%d, ' % device.II+\
+                        '%d, ' % device.II +\
                         '%f, ' % place_time.seconds +\
                         '%f, ' % '-1' +\
                         '%d, ' % current_run_count +\
@@ -281,37 +293,36 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
                 log_file.write(log_string)
                 log_file.close()
 
-
             except timeout.FunctionTimedOut:
                 dateTimeObj = datetime.now()
-                log_string = '#{0} timeout at {1}\n'.format(file_helper.benchmark_name, dateTimeObj.strftime("%d-%m-%y_%H:%M:%S"))
+                log_string = '#{0} timeout at {1}\n'.format(
+                    file_helper.benchmark_name, dateTimeObj.strftime("%d-%m-%y_%H:%M:%S"))
                 t1 = timeit.default_timer()
                 log_string += '%s, ' % file_helper.benchmark_name +\
-                        '%d, ' % device.Nx +\
-                        '%d, ' % device.Ny+\
-                        '%d, ' % device.unroll_factor +\
-                        '%d, ' % device.P +\
-                        '%d, ' % device.physical_channels +\
-                        '%d, ' % device.IO_O +\
-                        '%d, ' % device.T +\
-                        '%d, ' % device.II+\
-                        '%f, ' % place_time.seconds +\
-                        '-1, ' +\
-                        '%d, ' % current_run_count +\
-                        '%s, ' % tag +\
-                        '%d, ' % num_partitions_given_to_operator['*'] +\
-                        '%d, ' % num_partitions_given_to_operator['+'] +\
-                        '%d, ' % num_partitions_given_to_operator['IN'] +\
-                        '%d, ' % num_partitions_given_to_operator['OUT'] +\
-                        '%d, ' % num_vars +\
-                        '%d, ' % num_constrs +\
-                        "timeout \n"
+                    '%d, ' % device.Nx +\
+                    '%d, ' % device.Ny +\
+                    '%d, ' % device.unroll_factor +\
+                    '%d, ' % device.P +\
+                    '%d, ' % device.physical_channels +\
+                    '%d, ' % device.IO_O +\
+                    '%d, ' % device.T +\
+                    '%d, ' % device.II +\
+                    '%f, ' % place_time.seconds +\
+                    '-1, ' +\
+                    '%d, ' % current_run_count +\
+                    '%s, ' % tag +\
+                    '%d, ' % num_partitions_given_to_operator['*'] +\
+                    '%d, ' % num_partitions_given_to_operator['+'] +\
+                    '%d, ' % num_partitions_given_to_operator['IN'] +\
+                    '%d, ' % num_partitions_given_to_operator['OUT'] +\
+                    '%d, ' % num_vars +\
+                    '%d, ' % num_constrs +\
+                    "timeout \n"
 
                 log_file = open(file_helper.log_file, "a+")
                 log_file.write(log_string)
                 log_file.close()
                 return
-
 
             current_run_count = run_count()
             device.physical_channels = 1 + device.physical_channels
@@ -319,8 +330,9 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
                 device.noc_pipelining_stages += 1
 
 
-class PathfinderScheduler( SchedulerStrategy ):
+class PathfinderScheduler(SchedulerStrategy):
     from .pathfinder_scheduler import schedule
 
-class IlpScheduler( SchedulerStrategy ):
+
+class IlpScheduler(SchedulerStrategy):
     from .ilp_scheduler_scip import schedule

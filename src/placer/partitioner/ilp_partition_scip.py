@@ -1,14 +1,15 @@
 import math
 
-import pyscipopt as scip 
+import pyscipopt as scip
 
-def partition_operator( operator_ranges, partition ):
+
+def partition_operator(operator_ranges, partition):
     for op, op_range in operator_ranges.items():
         if partition in op_range:
             return op
 
-def partition_with_ilp_scip( HG, K, num_partitions_given_to_operator, partition_filename, II, log_dir='.' ):
 
+def partition_with_ilp_scip(HG, K, num_partitions_given_to_operator, partition_filename, II, log_dir='.'):
     '''
     HYPERGRAPH PARTITIONING TECHNIQUES; D. Kucar, S. Areibi, A. Vannelli
     Thank you https://pdfs.semanticscholar.org/7f74/2a66842e333bcf237df0e3a4a575eed4b97b.pdf
@@ -27,7 +28,7 @@ def partition_with_ilp_scip( HG, K, num_partitions_given_to_operator, partition_
     # So for a = b + c, i.e. b->a, c->a, only 'a' will be in the operator map.
     # If b and c are not the result of a previous computation, they are unconstrained.
 
-    print( '--------------Partitioning DFG to pack PEs--------------\n' )
+    print('--------------Partitioning DFG to pack PEs--------------\n')
 
     arithmetic_operators = HG.extract_node_arithmetic_operators()
     in_nodes = HG.extract_input_nodes()
@@ -37,82 +38,96 @@ def partition_with_ilp_scip( HG, K, num_partitions_given_to_operator, partition_
     prevOperatorMax = 0
     for operator, num_of_operators in num_partitions_given_to_operator.items():
 
-        operator_ranges[operator] = range( prevOperatorMax, prevOperatorMax + num_of_operators )
+        operator_ranges[operator] = range(
+            prevOperatorMax, prevOperatorMax + num_of_operators)
         prevOperatorMax = prevOperatorMax + num_of_operators
 
-    H = len( HG.get_hyperedge_id_set() )
-    V =  len( HG.get_node_set() )
-    netlist = []#= [0] * H
+    H = len(HG.get_hyperedge_id_set())
+    V = len(HG.get_node_set())
+    netlist = []  # = [0] * H
 
     for edge in HG.ordered_hyperedge_id_iterator():
         hyperedge = HG.get_hyperedge_attributes(edge)
         driver = hyperedge['tail'][0]
-        net = [int( driver )]
+        net = [int(driver)]
 
         for sink in hyperedge['head']:
-            net.append( int(sink) )
-        netlist.append( net )
+            net.append(int(sink))
+        netlist.append(net)
     # Create a new model
     model = scip.Model("mip-partition")
     # Create variables
 
-    x = {} # x(v,partition) = 1 if node v is in partition *partition*; else 0
+    x = {}  # x(v,partition) = 1 if node v is in partition *partition*; else 0
 
     for v in range(V):
         for k in range(K):
             name = f"x_{v}_{k}"
-            x[v, k] = model.addVar(name=name, vtype='B') 
+            x[v, k] = model.addVar(name=name, vtype='B')
 
-    y = {} # y(h,partition) = 1 if net h is entirely in partition *partition(); else 0
+    # y(h,partition) = 1 if net h is entirely in partition *partition(); else 0
+    y = {}
 
     for v in range(V):
         for k in range(K):
             name = f"x_{v}_{k}"
-            y[v, k] = model.addVar(name=name, vtype='B') 
+            y[v, k] = model.addVar(name=name, vtype='B')
 
     # x = m.addVars( V, K, vtype=GRB.BINARY, name='x' ) #x(v,partition) = 1 if node v is in partition *partition*; else 0
     # y = m.addVars( H, K, vtype=GRB.BINARY, name='y' ) #y(h,partition) = 1 if net h is entirely in partition *partition(); else 0
     # # (1) Set objective
-    model.setObjective( scip.quicksum( y[h,partition] for h in range(H) for partition in range(K) ), sense='maximize' ) # sum of cut nets maximized
+    model.setObjective(scip.quicksum(y[h, partition] for h in range(
+        # sum of cut nets maximized
+        H) for partition in range(K)), sense='maximize')
     # m.setObjective( scip.quicksum( y[h,partition] for h in range(H) for partition in range(K) ), GRB.MAXIMIZE) #sum of cut nets maximized
     # (2) every node in exactly one partition
     for v in range(V):
-        model.addCons( scip.quicksum( x[v,partition] for partition in range(K) ) == 1 )
+        model.addCons(scip.quicksum(x[v, partition]
+                      for partition in range(K)) == 1)
     VERBOSE = False
     # FOR ARITH OPERATIONS
     # (3)a partition size LB
     MIN_ARITH_PARTITION_SIZE = 0
     for partition in range(K):
-        if partition_operator( operator_ranges, partition ) in ['*', '+']:
-            model.addCons( scip.quicksum( x[v,partition] for v in range(V) )>= MIN_ARITH_PARTITION_SIZE ) # TODO can update
-    
+        if partition_operator(operator_ranges, partition) in ['*', '+']:
+            model.addCons(scip.quicksum(x[v, partition] for v in range(
+                V)) >= MIN_ARITH_PARTITION_SIZE)  # TODO can update
+
     # (3)b partition size UB
     # can't be V/K because we
     #  don't balance things out?
-    MAX_ARITH_PARTITION_SIZE = 7#math.ceil( V/K) # len(arithmetic_operators) / K ) # TODO can update
+    # math.ceil( V/K) # len(arithmetic_operators) / K ) # TODO can update
+    MAX_ARITH_PARTITION_SIZE = 7
     nets_for_each_operator = {}
-    for k,v in operator_ranges.items():
+    for k, v in operator_ranges.items():
         nets_for_each_operator[k] = 0
     #
-    for k,v in arithmetic_operators.items():
+    for k, v in arithmetic_operators.items():
         nets_for_each_operator[v] = nets_for_each_operator[v] + 1
-    
+
     for partition in range(K):
         MAX_ARITH_PARTITION_SIZE = 10
         # if partition >= operator_ranges['*'][0] and partition <=  operator_ranges['*'][1]:
-        if partition_operator( operator_ranges, partition ) == '*':
-            MAX_ARITH_PARTITION_SIZE = math.ceil( nets_for_each_operator['*'] / len(operator_ranges['*']) )
+        if partition_operator(operator_ranges, partition) == '*':
+            MAX_ARITH_PARTITION_SIZE = math.ceil(
+                nets_for_each_operator['*'] / len(operator_ranges['*']))
             if MAX_ARITH_PARTITION_SIZE > II:
-                print("II of {} too low for * MAX_PARTITION_SIZE {}".format( II, MAX_ARITH_PARTITION_SIZE))
-            model.addCons( scip.quicksum( x[v,partition] for v in range(V) ) <= MAX_ARITH_PARTITION_SIZE )
-        elif  partition_operator( operator_ranges, partition ) == '+':#str(partition) in arithmetic_operators and arithmetic_operators[str(partition)] == '+':# >= operator_ranges['+'][0] and partition <=  operator_ranges['+'][1]:
-            MAX_ARITH_PARTITION_SIZE = math.ceil( nets_for_each_operator['+'] / len(operator_ranges['+']) )
+                print("II of {} too low for * MAX_PARTITION_SIZE {}".format(II,
+                      MAX_ARITH_PARTITION_SIZE))
+            model.addCons(scip.quicksum(x[v, partition]
+                          for v in range(V)) <= MAX_ARITH_PARTITION_SIZE)
+        # str(partition) in arithmetic_operators and arithmetic_operators[str(partition)] == '+':# >= operator_ranges['+'][0] and partition <=  operator_ranges['+'][1]:
+        elif partition_operator(operator_ranges, partition) == '+':
+            MAX_ARITH_PARTITION_SIZE = math.ceil(
+                nets_for_each_operator['+'] / len(operator_ranges['+']))
             if MAX_ARITH_PARTITION_SIZE > II:
-                print("II of {} too low for + MAX_PARTITION_SIZE {}".format( II, MAX_ARITH_PARTITION_SIZE))
+                print("II of {} too low for + MAX_PARTITION_SIZE {}".format(II,
+                      MAX_ARITH_PARTITION_SIZE))
             if VERBOSE:
                 print("MAX_ARITH_PARTITIONS_SIZE +: {}".format(MAX_ARITH_PARTITION_SIZE))
-            model.addCons( scip.quicksum( x[v,partition] for v in range(V) ) <= MAX_ARITH_PARTITION_SIZE )
-        elif partition_operator( operator_ranges, partition ) == 'IN' or partition_operator( operator_ranges, partition ) == 'OUT':
+            model.addCons(scip.quicksum(x[v, partition]
+                          for v in range(V)) <= MAX_ARITH_PARTITION_SIZE)
+        elif partition_operator(operator_ranges, partition) == 'IN' or partition_operator(operator_ranges, partition) == 'OUT':
             continue
         else:
             # import pdb; pdb.set_trace
@@ -124,48 +139,60 @@ def partition_with_ilp_scip( HG, K, num_partitions_given_to_operator, partition_
     MIN_IO_PARTITION_SIZE = 0
     for partition in range(K):
         if partition in operator_ranges['IN']:
-            model.addCons( scip.quicksum( x[v,partition] for v in range(V) )>= MIN_IO_PARTITION_SIZE ) # TODO can update
+            model.addCons(scip.quicksum(x[v, partition] for v in range(
+                V)) >= MIN_IO_PARTITION_SIZE)  # TODO can update
         elif partition in operator_ranges['OUT']:
-            model.addCons( scip.quicksum( x[v,partition] for v in range(V) )>= MIN_IO_PARTITION_SIZE ) # TODO can update
+            model.addCons(scip.quicksum(x[v, partition] for v in range(
+                V)) >= MIN_IO_PARTITION_SIZE)  # TODO can update
     # (3)b partition size UB
     # can't be V/K because we don't balance things out?
-    MAX_IO_PARTITION_SIZE = math.ceil( (len( in_nodes )+len(out_nodes)) / (len(operator_ranges['IN'])+len(operator_ranges['OUT'])) )
-    MAX_IN_PARTITION_SIZE = math.ceil( len( in_nodes ) / len(operator_ranges['IN']) )
-    MAX_OUT_PARTITION_SIZE = math.ceil( len( out_nodes ) / len(operator_ranges['OUT']) )
+    MAX_IO_PARTITION_SIZE = math.ceil(
+        (len(in_nodes)+len(out_nodes)) / (len(operator_ranges['IN'])+len(operator_ranges['OUT'])))
+    MAX_IN_PARTITION_SIZE = math.ceil(
+        len(in_nodes) / len(operator_ranges['IN']))
+    MAX_OUT_PARTITION_SIZE = math.ceil(
+        len(out_nodes) / len(operator_ranges['OUT']))
     # if MAX_IO_PARTITION_SIZE > II * self.C:
     #     print("II of {} too low for IO_MAX_PARTITION_SIZE {}".format( II, MAX_IO_PARTITION_SIZE))
     # MAX_IO_PARTITION_SIZE = #math.ceil( V/K) # len(arithmetic_operators) / K ) # TODO can update
     for partition in range(K):
         # if VERBOSE:
         #     print("MAX_IO_PARTITION_SIZE", MAX_IO_PARTITION_SIZE)
-        if partition in operator_ranges['IN']: #>= operator_ranges['IO'][0] and partition <=  operator_ranges['IO'][1]:
+        # >= operator_ranges['IO'][0] and partition <=  operator_ranges['IO'][1]:
+        if partition in operator_ranges['IN']:
             # MAX_IO_PARTITION_SIZE = MAX_IO_PARTITION_SIZE + 8
-            model.addCons( scip.quicksum( x[v,partition] for v in range(V) ) <= MAX_IN_PARTITION_SIZE )
-        elif partition in operator_ranges['OUT']: #>= operator_ranges['IO'][0] and partition <=  operator_ranges['IO'][1]:
+            model.addCons(scip.quicksum(x[v, partition]
+                          for v in range(V)) <= MAX_IN_PARTITION_SIZE)
+        # >= operator_ranges['IO'][0] and partition <=  operator_ranges['IO'][1]:
+        elif partition in operator_ranges['OUT']:
             # MAX_IO_PARTITION_SIZE = MAX_IO_PARTITION_SIZE + 8
-            model.addCons( scip.quicksum( x[v,partition] for v in range(V) ) <= MAX_OUT_PARTITION_SIZE )
+            model.addCons(scip.quicksum(x[v, partition]
+                          for v in range(V)) <= MAX_OUT_PARTITION_SIZE)
 
     # "net constraints"
     for h in range(H):
         for v in range(V):
             if v in netlist[h]:
                 for partition in range(K):
-                    model.addCons( y[h,partition] - x[v,partition] <= 0 )
+                    model.addCons(y[h, partition] - x[v, partition] <= 0)
 
     # custom region constraints.
     for v in range(V):
 
         if str(v) in arithmetic_operators:
-            operator_range = operator_ranges[ arithmetic_operators[ str(v) ] ]
-            print( f'{arithmetic_operators[str(v)]}')
-            model.addCons( scip.quicksum( x[v,partition] for partition in operator_range ) == 1 )
+            operator_range = operator_ranges[arithmetic_operators[str(v)]]
+            print(f'{arithmetic_operators[str(v)]}')
+            model.addCons(scip.quicksum(x[v, partition]
+                          for partition in operator_range) == 1)
             # don't want this partition to be anywhere else: none unconstrained
         elif str(v) in in_nodes:
-            operator_range = operator_ranges[ 'IN' ]
-            model.addCons( scip.quicksum( x[v,partition] for partition in operator_range ) == 1 )
+            operator_range = operator_ranges['IN']
+            model.addCons(scip.quicksum(x[v, partition]
+                          for partition in operator_range) == 1)
         elif str(v) in out_nodes:
-            operator_range = operator_ranges[ 'OUT' ]
-            model.addCons( scip.quicksum( x[v,partition] for partition in operator_range ) == 1 )
+            operator_range = operator_ranges['OUT']
+            model.addCons(scip.quicksum(x[v, partition]
+                          for partition in operator_range) == 1)
         else:
             # operator_range = operator_ranges[ 'IO' ]
             # for part in range( operator_range[0], operator_range[1] + 1 ):
@@ -188,7 +215,7 @@ def partition_with_ilp_scip( HG, K, num_partitions_given_to_operator, partition_
     # m.write( os.path.realpath( log_dir ) + '/' + 'debug-partition.mps')
     # m.write( os.path.realpath( log_dir ) + '/' + 'debug-partition.lp')
     model.optimize()
-    # model.writeLP("dumpy.lp") # um.. this segfaults?? 
+    # model.writeLP("dumpy.lp") # um.. this segfaults??
     model.printBestSol("best.lp")
     # assert(m.Status == 2), "Could not find a feasible solution with these parameters"
     # t2 = timeit.default_timer()
@@ -204,7 +231,7 @@ def partition_with_ilp_scip( HG, K, num_partitions_given_to_operator, partition_
     #         for partition in range(K):
     #             xLine = 'x[%d][%d] = %d' % (v, partition, x[v,partition].x)
     #             print(xLine); solFile.write(xLine + '\n')
-    ret = [0] * ( V )
+    ret = [0] * (V)
     VERBOSE = True
     partition_operators = {}
     partition_operator_list = [-1]*K
@@ -212,7 +239,7 @@ def partition_with_ilp_scip( HG, K, num_partitions_given_to_operator, partition_
     for v in range(V):
         for partition in range(K):
             # import pdb; pdb.set_trace()
-            if x[v,partition].getLbLocal() == 1.0: # this might be right
+            if x[v, partition].getLbLocal() == 1.0:  # this might be right
                 print(f"{v}, {partition} == 1.0")
                 ret[v] = partition
                 xLine = '%d -> %d' % (v, partition)
@@ -220,13 +247,15 @@ def partition_with_ilp_scip( HG, K, num_partitions_given_to_operator, partition_
                     print(xLine)
                 # solFile.write(xLine + '\n')
                 if str(partition) not in partition_operators and str(v) in arithmetic_operators:
-                    partition_operators[str(partition)] =  arithmetic_operators[str(v)]
-                    partition_operator_list[partition] = arithmetic_operators[str(v)]
+                    partition_operators[str(
+                        partition)] = arithmetic_operators[str(v)]
+                    partition_operator_list[partition] = arithmetic_operators[str(
+                        v)]
                 elif str(partition) not in partition_operators and str(v) in in_nodes:
-                    partition_operators[str(partition)] =  in_nodes[str(v)]
+                    partition_operators[str(partition)] = in_nodes[str(v)]
                     partition_operator_list[partition] = in_nodes[str(v)]
                 elif str(partition) not in partition_operators and str(v) in out_nodes:
-                    partition_operators[str(partition)] =  out_nodes[str(v)]
+                    partition_operators[str(partition)] = out_nodes[str(v)]
                     partition_operator_list[partition] = out_nodes[str(v)]
                 if partition in num_p_for_each_partition:
                     num_p_for_each_partition[partition] = num_p_for_each_partition[partition] + 1
@@ -234,7 +263,8 @@ def partition_with_ilp_scip( HG, K, num_partitions_given_to_operator, partition_
                     num_p_for_each_partition[partition] = 1
     partition_operator_ = [0] * K
     for partition in range(K):
-        partition_operator_[partition] = partition_operator( operator_ranges, partition )
+        partition_operator_[partition] = partition_operator(
+            operator_ranges, partition)
 
     # print("Wrote solution to {0}".format(partition_filename))
 

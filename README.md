@@ -1,4 +1,23 @@
-There are three major components for setup: Gurobi installation, cgra-ilp dependency installation, and gcc-python-plugin setup
+This repository contains code and or supplementary materials related to the following paper:
+
+([**Mocarabe: High-Performance Time-Multiplexed Overlays for FPGAs**](https://ieeexplore.ieee.org/document/9444076))
+
+By Frederick Tombs, Alireza Mellat, and Nachiket Kapre
+
+---
+
+### How to Cite
+
+If you use any part of the code or data from this repository for academic work, please cite the associated paper as follows:
+
+```bibtex
+@INPROCEEDINGS{9444076,
+  author={Tombs, Frederick and Mellat, Alireza and Kapre, Nachiket},
+  booktitle={2021 IEEE 29th Annual International Symposium on Field-Programmable Custom Computing Machines (FCCM)},
+  title={Mocarabe: High-Performance Time-Multiplexed Overlays for FPGAs},
+  year={2021},
+  doi={10.1109/FCCM51124.2021.00021}
+}
 
 ## Setup
 

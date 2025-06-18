@@ -8,7 +8,7 @@ import warnings
 import numpy as np
 from networkx.drawing.nx_pydot import write_dot
 
-from src.dataflow_hypergraph import DataflowHypergraph
+from src.netlist import Netlist
 from src.device import Device
 import src.pe_allocator as pe_alloc
 import src.placer as placr
@@ -16,6 +16,8 @@ import src.scheduler as schedulr
 from src.rtl_gen import RTLGenerator
 from src.file_util import FilePathsHelper
 from src.resource_graph import ResourceGraph
+
+from src.sim import Sim
 
 parser = argparse.ArgumentParser(description='Space-Time ILP Scheduler')
 parser.add_argument('-dfg', metavar='dfg dir', required=True,
@@ -114,7 +116,7 @@ if unroll_factor == 0:
 
     # If there are fewer than II instances of a given operator, unroll by II
     # This is to keep PE utilization high for small benchmarks
-    dataflow_hgraph = DataflowHypergraph(os.path.join(
+    dataflow_hgraph = Netlist(os.path.join(
         dfg_dir, benchmark_name+".hgr"), unroll_factor=1)
     arith_oprtrs = collections.Counter(
         dataflow_hgraph.extract_node_arithmetic_operators().values())
@@ -130,11 +132,11 @@ if unroll_factor == 0:
     else:
         unroll_factor = 1
 
-    dataflow_hgraph = DataflowHypergraph(os.path.join(
+    dataflow_hgraph = Netlist(os.path.join(
         dfg_dir, benchmark_name+".hgr"), unroll_factor)
     print(f'Auto-Unroll factor: {unroll_factor}')
 else:
-    dataflow_hgraph = DataflowHypergraph(dfg_path=os.path.join(
+    dataflow_hgraph = Netlist(dfg_path=os.path.join(
         dfg_dir, benchmark_name+".hgr"), unroll_factor=unroll_factor)
 
 write_dot(dataflow_hgraph.to_graph(), os.path.join(
@@ -225,12 +227,8 @@ if sched_method == 'ILP':
         RTLGenerator.testbench_gen(
             file_helper.proj_dir + 'rtl/',  Nx, Ny, C, asserts_string)
 
-        print("To start a simultation with xsim (Vivado simulator):\n")
-        print(f"cd {file_helper.proj_dir}/rtl/")
-        print("xvlog --sv mocarabe.sv pe_2_input.sv torus_switch.sv pe_srl.v pe_mux_2_input.sv pe_mux_3_input.sv SRL16E.v SRLC32E.v SRL64.v mocarabe_tb.sv")
-        print("xelab -debug typical mocarabe_tb -s mocarabe_sim")
-        print("xsim mocarabe_sim")
-        print("----")
+        Sim.print_vivado_sim_cmd(file_helper)
+        Sim.print_iverilog_sim_cmd(file_helper)
 
         print("For a visualization of the schedule:")
         print("python3 src/torus_gui_freeze.py --proj {} --zoom 5".format(file_helper.proj_dir))

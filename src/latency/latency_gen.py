@@ -1,11 +1,5 @@
 import itertools
 
-import networkx as nx
-import numpy as np
-
-from resource_graph import ResourceGraph
-from resource_type import ResourceType
-
 
 def get_net_path_nodes(dataflow_graph, resource_graph, device, h, v, enter, exit_):
     net_paths = []

@@ -4,7 +4,7 @@ import copy
 import numpy as np
 
 
-def torus_min_distance_xy(sourcexy, sinkxy, Nx, Ny):
+def torus_min_distance_xy(sourcexy, sinkxy, Nx, Ny) -> tuple:
     source_x = sourcexy % Nx
     source_y = sourcexy // Nx
     sink_x = sinkxy % Nx
@@ -56,7 +56,7 @@ def torus_min_distance_xy(sourcexy, sinkxy, Nx, Ny):
         return ((Nx - source_x + sink_x), (Ny + - source_y + sink_y))
 
 
-def get_net_path_nodes(dataflow_graph, resource_graph, device, h, v, enter, exit_):
+def get_net_path_nodes(dataflow_graph, resource_graph, device, h, v, enter, exit_) -> list:
     net_paths = []
     # for every net
     for net_id, hyperedge_id in enumerate(dataflow_graph.ordered_hyperedge_id_iterator()):
@@ -113,7 +113,7 @@ def get_net_path_nodes(dataflow_graph, resource_graph, device, h, v, enter, exit
     return net_paths
 
 
-def cycle_for_pe_op(head_pe_xy, net_id, variable, C, T):
+def cycle_for_pe_op(head_pe_xy, net_id, variable, C, T) -> int:
 
     for c in range(C):
         for t in range(T):
@@ -124,9 +124,7 @@ def cycle_for_pe_op(head_pe_xy, net_id, variable, C, T):
                     return t
             except:
                 continue
-    import pdb
-    pdb.set_trace()
-
+    assert False, "cycle_for_pe_op(): Invalid solution"
 
 '''
 Recursive function to generate global timing schedule

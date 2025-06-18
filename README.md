@@ -1,10 +1,15 @@
 # TODO for cgra-ilp/Mocarabe
 This code has fallen behind.  Here are some goals to make it run more easily on modern systems:
-- Get rid of errors (esp python)
-- Add a non-gurobi ilp mode (GLPK,HiGHS)
 - Look into sat solvers and the like
 - Add basic test suite
 - Rewrite the gcc stuff to be either a llvm backend or...
+- rename dataflow_hypergraph netlist AND add unit tests
+- potentially use pyverilog instead of fstrings
+- verilator and iverilog for simulation 
+- vhdl backend, slang backend
+- lint verilog (and add pytest)
+- make system
+- readme: open with image of muqarnas
 
 # README for cgra-ilp/Mocarabe
 

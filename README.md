@@ -4,7 +4,6 @@ This repository contains code and or supplementary materials related to the foll
 
 By Frederick Tombs, Alireza Mellat, and Nachiket Kapre
 
----
 
 ### How to Cite
 
@@ -18,7 +17,9 @@ If you use any part of the code or data from this repository for academic work, 
   year={2021},
   doi={10.1109/FCCM51124.2021.00021}
 }
+```
 
+--- 
 ## Setup
 
 `# create a virtual environment and install the requirements

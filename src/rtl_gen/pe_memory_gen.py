@@ -228,6 +228,8 @@ def generate_op_addresses_and_op_port_select(device, NUM_OPERANDS, T, exit_, dat
             for t in range(T):
                 samecycle_hedges[x][y][t] = dict()
 
+    pe_in_events = []  # (arrival_time, port, head_pe_xy, tail_node)
+
     edge_each_fanout_write_into_srl_time = [
         0] * len(dataflow_graph.ordered_hyperedge_id_list())
 
@@ -303,7 +305,9 @@ def generate_op_addresses_and_op_port_select(device, NUM_OPERANDS, T, exit_, dat
             assert (op_addresses[head_pe_xy[0]]
                     [head_pe_xy[1]][port][load_time] >= 0)
 
-    return op_addresses, op_port_select
+            pe_in_events.append((arrival_time, port, head_pe_xy, tail_node))
+
+    return op_addresses, op_port_select, pe_in_events
 
 
 ''' Given values for all input nodes and a DFG, return a dict with every node's value'''
@@ -381,7 +385,7 @@ def generate_and_write_pe_memories(proj_dir, resource_graph, net_paths, dataflow
 
     ''' What we're really after '''
     # edge_each_fanout_write_into_srl_time does not really have to be returned
-    op_addresses, op_port_select = generate_op_addresses_and_op_port_select(
+    op_addresses, op_port_select, pe_in_events = generate_op_addresses_and_op_port_select(
         device, NUM_OPERANDS, device.T, exit_, dataflow_graph, global_node_execute_cycle, global_node_enter_cycle, placement_result, node_and_edge_port, edge_and_fanout_node_cycles_on_noc)
 
     for operand in range(NUM_OPERANDS):
@@ -427,34 +431,69 @@ def generate_and_write_pe_memories(proj_dir, resource_graph, net_paths, dataflow
     # assert_values
     root_node_values = {}
     for input_node in dataflow_graph.get_all_root_nodes():
-
         x, y = placement_result[input_node]
-
         root_node_values[input_node] = global_node_execute_cycle[input_node] + \
             100*(x + y*device.Nx)  # to prevent 0
 
     assert_values = get_node_values(root_node_values, dataflow_graph)
-    asserts_string = ""
-    # asserts_string += f"        #{startup_latency+1}\n"
-    # sort by key and add to pe_output
-    pe_in_asserts_string = ""
-    last_cycle = 0
 
-    for cycle_in_order in sorted(enter_noc_cycle2node.keys()):
+    # Second-iteration expected values: each root input shifts by II each period
+    II = device.II
+    root_node_values_2nd = {node: val + II for node, val in root_node_values.items()}
+    assert_values_2nd = get_node_values(root_node_values_2nd, dataflow_graph)
 
-        step = cycle_in_order - last_cycle
-        asserts_string += "        #" + \
-            str(step) + f" //cycle {cycle_in_order} \n"
-        pe_in_asserts_string = "        #" + \
-            str(step) + f" //cycle {cycle_in_order} \n"
-        for node in enter_noc_cycle2node[cycle_in_order]:
+    Nx = resource_graph.Nx
+
+    # Collect all assertion events as (cycle, signal_expr, expected, label)
+    events = []
+
+    # First iteration: pe_out at node's NoC-enter cycle
+    for cycle, nodes in enter_noc_cycle2node.items():
+        for node in nodes:
             x, y = placement_result[node]
+            events.append((cycle,
+                           f'pe_out[{x} + {Nx}*{y}]',
+                           assert_values[node],
+                           f'node {node} iter1'))
 
-            asserts_string += f"        assert( pe_out[{x} + {resource_graph.Nx}*{y}] == {assert_values[node]})  $display(\"PE ({x}+{resource_graph.Nx}*{y}) outputting {assert_values[node]} (node {node}) @{cycle_in_order}|  |  |  |  |  |  |  |  \");"
-            asserts_string += f'else $display("Assert error:  pe_out[{x}+{resource_graph.Nx}*{y}](node {node}) == %d @{cycle_in_order}, should be {assert_values[node]}---------------------------------------------",pe_out[{x}+{resource_graph.Nx}*{y}]);\n'
-            # pe_in_asserts_string +=
-        last_cycle = cycle_in_order
-    asserts_string += "#10\n"
-    asserts_string += "$finish;\n"
+    # Second iteration: same PEs II cycles later, with next period's data
+    for cycle, nodes in enter_noc_cycle2node.items():
+        for node in nodes:
+            x, y = placement_result[node]
+            events.append((cycle + II,
+                           f'pe_out[{x} + {Nx}*{y}]',
+                           assert_values_2nd[node],
+                           f'node {node} iter2'))
+
+    # Operand arrival: pe_in{port} at each head PE when the value is visible at the mux output.
+    # arrival_time is when the data reaches the last NoC switch; +2 for the o_to_pe pipeline
+    # (o_to_pe_r + o_to_pe_pipe), so the mux output is stable at sim time arrival_time+3
+    # (mux_to_pe-after-g(arrival+2), which is what op_reg will capture).
+    for arrival_time, port, head_pe_xy, tail_node in pe_in_events:
+        hx, hy = head_pe_xy
+        events.append((arrival_time + 3,
+                       f'pe_in{port}[{hx} + {Nx}*{hy}]',
+                       assert_values[tail_node],
+                       f'operand to PE({hx},{hy}) port {port} from node {tail_node}'))
+
+    events.sort(key=lambda e: e[0])
+    assert_count = len(events)
+
+    asserts_string = ""
+    last_cycle = 0
+    for cycle, grp in itertools.groupby(events, key=lambda e: e[0]):
+        step = cycle - last_cycle
+        asserts_string += f"        #{step} //cycle {cycle}\n"
+        for _, signal, expected, label in grp:
+            asserts_string += f'        assert({signal} == {expected}) $display("OK: {signal}=={expected} ({label})");\n'
+            asserts_string += f'        else begin fail_count = fail_count + 1; $display("Assert error: {signal}==%0d @{cycle}, should be {expected} ({label})", {signal}); end\n'
+        last_cycle = cycle
+
+    asserts_string += f'        if (fail_count == 0)\n'
+    asserts_string += f'            $display("\\n=== PASS: all {assert_count} assertions passed ===");\n'
+    asserts_string += f'        else\n'
+    asserts_string += f'            $display("\\n=== FAIL: %0d of {assert_count} assertions failed ===", fail_count);\n'
+    asserts_string += "        #10\n"
+    asserts_string += "        $finish;\n"
 
     return op_addresses, op_port_select, asserts_string, latency

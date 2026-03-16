@@ -252,8 +252,12 @@ def generate_op_addresses_and_op_port_select(device, NUM_OPERANDS, T, exit_, dat
             write_into_srl_time = edge_each_fanout_write_into_srl_time[int(
                 hyperedge_id[1:])-1][head_node]
 
+            cycles_on_noc = edge_and_fanout_node_cycles_on_noc[int(
+                hyperedge_id[1:])-1][head_node]
+            hops = cycles_on_noc // (device.noc_pipelining_stages + 1)
+
             execute_time_for_this_op = global_node_execute_cycle[head_node]
-            load_time = (execute_time_for_this_op) % T
+            load_time = (execute_time_for_this_op - 2) % T
 
             try:
                 this_node_and_edge_port = node_and_edge_port[(
@@ -263,6 +267,7 @@ def generate_op_addresses_and_op_port_select(device, NUM_OPERANDS, T, exit_, dat
 
             c, t = get_exit_channel_and_cycle(
                 exit_, head_pe_xy[0], head_pe_xy[1], int(hyperedge_id[1:])-1, C, T)
+            t_mux = t % T
             possible_ports = [*range(IO_I)]  # ports
 
             # if a = b + c, b and c can't use the same PE port
@@ -273,7 +278,7 @@ def generate_op_addresses_and_op_port_select(device, NUM_OPERANDS, T, exit_, dat
                     possible_ports.remove(port)
 
             # can't use the same port as another
-            for samecycle_hedge, port in samecycle_hedges[head_pe_xy[0]][head_pe_xy[1]][t].items():
+            for samecycle_hedge, port in samecycle_hedges[head_pe_xy[0]][head_pe_xy[1]][t_mux].items():
                 if samecycle_hedge == hyperedge_id:
                     continue
                 if port in possible_ports:
@@ -287,16 +292,14 @@ def generate_op_addresses_and_op_port_select(device, NUM_OPERANDS, T, exit_, dat
 
             sibling_operands[int(head_node)][hyperedge_id] = port
             samecycle_hedges[head_pe_xy[0]
-                             ][head_pe_xy[1]][t][hyperedge_id] = port
+                             ][head_pe_xy[1]][t_mux][hyperedge_id] = port
 
-            op_port_select[head_pe_xy[0]][head_pe_xy[1]][port][t] = c
+            op_port_select[head_pe_xy[0]][head_pe_xy[1]][port][t_mux] = c
 
+            A_val = execute_time_for_this_op - arrival_time - 5
             op_addresses[head_pe_xy[0]][head_pe_xy[1]
-                                        ][port][load_time] = execute_time_for_this_op-write_into_srl_time - 4
+                                        ][port][load_time] = A_val
 
-            if op_addresses[head_pe_xy[0]][head_pe_xy[1]][port][load_time] < 0:
-                import pdb
-                pdb.set_trace()
             assert (op_addresses[head_pe_xy[0]]
                     [head_pe_xy[1]][port][load_time] >= 0)
 
@@ -397,7 +400,7 @@ def generate_and_write_pe_memories(proj_dir, resource_graph, net_paths, dataflow
             for y in range(device.Ny):
                 string = ''
                 for t in range(device.T):
-                    string += hex(op_port_select[x][y][operand][t])[2:] + "\n"
+                    string += bin(op_port_select[x][y][operand][t])[2:] + "\n"
                 this_file = open(
                     proj_dir + f'/rtl/mux{2}_x{x}_y{y}_sel_mem{operand}.dat', "w+")
                 this_file.write(string)

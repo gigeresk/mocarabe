@@ -10,4 +10,7 @@ def test_correctness(dfg, iod, ard, ii, c, place_time, sched_method):
     
     # vvp mocarabe_sim.vvp
     
+    #     python3 mocarabe.py -dfg hgr/int_adder_chain -iod 1 -ard 1 -II 1 -C 20 --place_time 0.1 --sched_method ILP
+    # python3 mocarabe.py -dfg hgr/int_adder_chain -iod 1 -ard 1 -II 2 -C 20 --place_time 0.1 --sched_method ILP
+    # python3 mocarabe.py -dfg hgr/int_adder_chain -iod 1 -ard 1 -II 3 -C 20 --place_time 0.1 --sched_method ILP
     pass

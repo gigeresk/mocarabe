@@ -255,20 +255,9 @@ def partition_with_ilp_scip(
     model.optimize()
     # model.writeLP("dumpy.lp") # um.. this segfaults??
     model.printBestSol("best.lp")
-    # assert(m.Status == 2), "Could not find a feasible solution with these parameters"
-    # t2 = timeit.default_timer()
-    # # solFilename = 'results/' + benchmark + "-K" + K + '.sol'
-    # solFile = open(partition_filename, "w+")
-    # VERBOSE = False
-    # if VERBOSE:
-    #     for h in range(H):
-    #         for partition in range(K):
-    #             yLine = 'y[%d][%d] = %d' % (h, partition, y[h,partition].x)
-    #             print(yLine); solFile.write(yLine + '\n')
-    #     for v in range(V):
-    #         for partition in range(K):
-    #             xLine = 'x[%d][%d] = %d' % (v, partition, x[v,partition].x)
-    #             print(xLine); solFile.write(xLine + '\n')
+    if model.getNSols() == 0:
+        raise RuntimeError("ILP partitioner found no feasible solution")
+    sol = model.getBestSol()
     ret = [0] * (V)
     VERBOSE = True
     partition_operators = {}
@@ -276,8 +265,7 @@ def partition_with_ilp_scip(
     num_p_for_each_partition = {}
     for v in range(V):
         for partition in range(K):
-            # import pdb; pdb.set_trace()
-            if x[v, partition].getLbLocal() == 1.0:  # this might be right
+            if round(model.getSolVal(sol, x[v, partition])) == 1:
                 print(f"{v}, {partition} == 1.0")
                 ret[v] = partition
                 xLine = "%d -> %d" % (v, partition)

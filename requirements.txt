@@ -11,5 +11,6 @@ tk>=0.1.0
 lxml>=4.6
 beautifulsoup4>=4.9
 pydot>=1.4.1
-# tkinter
-PySCIPOpt
+PySCIPOpt>=6.1.0
+pytest >= 9.0
+pytest-xdist >= 3.8.0

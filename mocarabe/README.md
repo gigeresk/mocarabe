@@ -1,4 +1,4 @@
-# src/ README
+# mocarabe/ README
 
 ## mocarabe.py
 mocarabe.py is the driver for tor the Mocarabe compiler.
@@ -63,7 +63,7 @@ The scheduler currently has two strategies, an ILP formulation and a pathfinder 
 Please refer to the (first?) paper for an overview of constraints/objective function.
 
 ### PF Scheduler
-Refer to the reference paper for some information (A Bandwidth-Optimized Routing Algorithm for Hybrid FPGA Networks-on-Chip).  This code is optimized in terms of runtime but is more complicated to implement, and less effective, than ILP.  The ResourceGraph class in src/resource_graph.py is of note.  This code has some good debugging tools built in.
+Refer to the reference paper for some information (A Bandwidth-Optimized Routing Algorithm for Hybrid FPGA Networks-on-Chip).  This code is optimized in terms of runtime but is more complicated to implement, and less effective, than ILP.  The ResourceGraph class in mocarabe/resource_graph.py is of note.  This code has some good debugging tools built in.
 
 ## rtl_gen
 A typical rtl_gen script workflow (see hwgen_develop.py) is

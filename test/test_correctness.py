@@ -18,7 +18,7 @@ def run_simulation(dfg, ii, iod=1, ard=1, c=20, place_time=0.1, sched_method="IL
     # Run mocarabe to generate the project
     result = subprocess.run(
         [
-            "python3", "mocarabe.py",
+            "python3", "run_mocarabe.py",
             "-dfg", dfg,
             "-iod", str(iod),
             "-ard", str(ard),
@@ -29,7 +29,7 @@ def run_simulation(dfg, ii, iod=1, ard=1, c=20, place_time=0.1, sched_method="IL
         ],
         capture_output=True, text=True, cwd=MOCARABE_ROOT
     )
-    assert result.returncode == 0, f"mocarabe.py failed:\n{result.stdout}\n{result.stderr}"
+    assert result.returncode == 0, f"run_mocarabe.py failed:\n{result.stdout}\n{result.stderr}"
 
     # Extract the rtl directory from the output
     match = re.search(r"cd (proj/\S+/rtl/)", result.stdout)

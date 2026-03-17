@@ -4,7 +4,7 @@ import numpy as np
 
 import pyscipopt as scip
 
-from src.resource_graph import ResourceGraph
+from mocarabe.resource_graph import ResourceGraph
 from .scheduled_netlist import ScheduledNetlist
 from .scheduled_net import ScheduledNet
 

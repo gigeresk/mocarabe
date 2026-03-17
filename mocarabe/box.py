@@ -1,4 +1,4 @@
-class Box:  # TODO move outof here
+class Box:
     negativeBox = []  # anything we do NOT want to enter using an h or v
 
     def __init__(self, start, end, modulo):

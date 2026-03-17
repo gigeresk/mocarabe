@@ -21,7 +21,7 @@ $export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/fgjtombs/code/gcc-python-plugin/g
 in gcc-with-python or equivalent, fplugin is pointed to /home/fgjtombs/code/gcc-python-plugin/python.so
 '''
 
-sys.path.append("src")
+sys.path.append("mocarabe")
 # Output the inverted DFG of a program
 
 

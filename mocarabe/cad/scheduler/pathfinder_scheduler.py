@@ -6,9 +6,9 @@ import random
 
 import networkx as nx
 
-from src.device import Device
-from src.resource_graph import ResourceGraph
-from src.resource_type import ResourceType
+from mocarabe.device import Device
+from mocarabe.resource_graph import ResourceGraph
+from mocarabe.resource_type import ResourceType
 from .scheduled_netlist import ScheduledNetlist
 from .scheduled_net import ScheduledNet
 

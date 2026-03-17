@@ -1,11 +1,11 @@
 import shutil
 import json
 from dataflow_hypergraph import DataflowHypergraph
-from gccutils import get_src_for_loc, cfg_to_idfg, invoke_dot
+from gccutils import get_mocarabe_for_loc, cfg_to_idfg, invoke_dot
 import gcc
 import sys
-sys.path.append("src")
-sys.path.append("../cgra-ilp/src")
+sys.path.append("mocarabe")
+sys.path.append("../cgra-ilp/mocarabe")
 # Output the inverted DFG of a program
 
 

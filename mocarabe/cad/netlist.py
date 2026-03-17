@@ -1,12 +1,9 @@
-# move dataflow hypergraph to here
 from collections import OrderedDict
 
 import networkx as nx
 import palettable
-
 from halp.directed_hypergraph import DirectedHypergraph
 from halp.utilities import directed_statistics
-from networkx.algorithms.dag import topological_sort #TODO where was this used
 
 
 class Netlist(DirectedHypergraph):

@@ -1,4 +1,3 @@
-
 import sys
 import math
 # print("\n\n\nTODO delete operator_map/__init__.py\n\n\n")
@@ -15,32 +14,33 @@ class DeviceMap:
         # self.num_partitions_given_to_operator, self.Nx, self.Ny = auto_operator_allocator( dataflow_hgraph, II, io_diffusion, arith_diffusion )
 
     def __str__(self):
-        string = '\nOperation Allocation (unpartitioned and unplaced)\n'
-        operator_assortment = [0]*self.Nx*self.Ny
+        string = "\nOperation Allocation (unpartitioned and unplaced)\n"
+        operator_assortment = [0] * self.Nx * self.Ny
         operator_count = 0
         for operator, num_partitions in self.num_partitions_given_to_operator.items():
             for num in range(0, num_partitions):
                 operator_assortment[operator_count + num] = operator
             operator_count = operator_count + num_partitions
-        for y in range(self.Ny-1, -1, -1):
-            string = string + '+' + self.Nx*'-----+' + '\n'
+        for y in range(self.Ny - 1, -1, -1):
+            string = string + "+" + self.Nx * "-----+" + "\n"
             for x in range(0, self.Nx):
-                string = string + '|'
-                id_ = y*self.Nx + x
+                string = string + "|"
+                id_ = y * self.Nx + x
                 operator_str = str(operator_assortment[id_])
                 padding = 5 - len(operator_str)
                 padding = max(padding, 0)
                 left_padding = padding - (padding // 2)
                 right_padding = padding - left_padding
 
-                operator_str = ' '*left_padding + operator_str + ' '*right_padding
+                operator_str = " " * left_padding + operator_str + " " * right_padding
 
                 string = string + operator_str
-            string = string + '|'
-            string = string + '\n'
+            string = string + "|"
+            string = string + "\n"
 
-        string = string + '+' + self.Nx*'-----+' + '\n\n'
+        string = string + "+" + self.Nx * "-----+" + "\n\n"
         return string
+
 
 # class PartitionedOperatorMap( DeviceMap ):
 #     def __init__( self, operator_map,II, Nx, Ny,num_partitions_given_to_operator,  dataflow_hgraph, partition_filename ):
@@ -104,7 +104,7 @@ class DeviceMap:
 
 #         return num_op_for_each_partition
 
-    # from ._partition import partition
+# from ._partition import partition
 
 # class PlacedOperatorMap( PartitionedOperatorMap ):
 

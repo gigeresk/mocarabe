@@ -3,18 +3,31 @@ import sys
 
 
 def modify_benchmark_header(path, x, y, c, DW=32, sched_len=4):
-    f = open(path+"/benchmark.h", "w")
-    f.write("""`define BENCHMARK_DATA_WIDTH """+str(DW)+"""
+    f = open(path + "/benchmark.h", "w")
+    f.write(
+        """`define BENCHMARK_DATA_WIDTH """
+        + str(DW)
+        + """
 `define D_WIDTH [`BENCHMARK_DATA_WIDTH-1:0]
-`define BENCHMARK_X_WIDTH """+str(x)+"""
-`define BENCHMARK_Y_WIDTH """+str(y)+"""
-`define BENCHMARK_SCHED_LEN """+str(sched_len)+"""
-`define BENCHMARK_CHAN_WIDTH """+str(c))
+`define BENCHMARK_X_WIDTH """
+        + str(x)
+        + """
+`define BENCHMARK_Y_WIDTH """
+        + str(y)
+        + """
+`define BENCHMARK_SCHED_LEN """
+        + str(sched_len)
+        + """
+`define BENCHMARK_CHAN_WIDTH """
+        + str(c)
+    )
     f.close()
 
 
 def run_mocarabe():
-    print("\n\nMocarabe: High-Performance Time-Multiplexed Overlays for FPGAs\n University of Waterloo\n\n")
+    print(
+        "\n\nMocarabe: High-Performance Time-Multiplexed Overlays for FPGAs\n University of Waterloo\n\n"
+    )
     if len(sys.argv) > 1:
         x = int(sys.argv[1])
         y = int(sys.argv[2])
@@ -25,7 +38,7 @@ def run_mocarabe():
         y = 10
         c = 3
         batch = 1
-    os.system("python3 placement.py "+str(x)+" "+str(y)+" "+str(c))
+    os.system("python3 placement.py " + str(x) + " " + str(y) + " " + str(c))
     modify_benchmark_header("./rtl", x, y, c)
     if batch == 1:
         print("Launching Vivado in batch mode...")

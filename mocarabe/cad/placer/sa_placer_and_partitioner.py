@@ -4,6 +4,7 @@ import random
 from gurobipy import *
 import timeit
 from simanneal import Annealer
+
 # from placement_visualizer import visualize_placement
 import math
 
@@ -16,9 +17,11 @@ def where(array, value_target):
             return ix
 
 
-def initialize_state_ok(Nx, Ny, ii, dataflow_hypergraph, partitioned_op_map, type='topological'):
-    ''' No placement constraints yet '''
-    ''' strategies: topological triangle, random, dfg-aware sort...idk'''
+def initialize_state_ok(
+    Nx, Ny, ii, dataflow_hypergraph, partitioned_op_map, type="topological"
+):
+    """No placement constraints yet"""
+    """ strategies: topological triangle, random, dfg-aware sort...idk"""
 
     # partitioned_op_map: think that's dfg node-> partition.
     # first attempt: get a topological sort, and place
@@ -60,7 +63,7 @@ def initialize_state_ok(Nx, Ny, ii, dataflow_hypergraph, partitioned_op_map, typ
     for ix, pe in enumerate(initial_state):
         initial_state[ix] = pe_ix
         pe_ix += 1
-        pe_ix = pe_ix % (Nx*Ny)
+        pe_ix = pe_ix % (Nx * Ny)
 
     mul_nodes = []
     add_nodes = []
@@ -90,7 +93,8 @@ def initialize_state_ok(Nx, Ny, ii, dataflow_hypergraph, partitioned_op_map, typ
     #     initial_state[int(add_node)] =  start_xy[0] + start_xy[1] * Nx
 
     print(
-        f"Starting energy: {debug_energy(dataflow_hypergraph, mul_nodes, add_nodes, io_nodes, initial_state,  Nx, Ny, ii):} ")
+        f"Starting energy: {debug_energy(dataflow_hypergraph, mul_nodes, add_nodes, io_nodes, initial_state, Nx, Ny, ii):} "
+    )
 
     return initial_state, mul_nodes, add_nodes, io_nodes
 
@@ -106,51 +110,52 @@ def torus_min_distance_xy(sourcexy, sinkxy, Nx, Ny):
     # assert( source_y < Ny )
     # assert( sink_y < Ny )
 
-    if (source_x <= sink_x and source_y <= sink_y):
-        '''
+    if source_x <= sink_x and source_y <= sink_y:
+        """
         --------------
         |  / >> snk  |
         |  ^         |
         | src        |
         --------------
-        '''
+        """
         # no rollover
         return ((sink_x - source_x), (sink_y - source_y))
-    elif (source_x > sink_x and source_y <= sink_y):
-        '''
+    elif source_x > sink_x and source_y <= sink_y:
+        """
         --------------
         |  snk       |
         |  ^         |
         |>>/    src>>|
         --------------
-        '''
+        """
         return ((Nx + sink_x - source_x), (sink_y - source_y))
-    elif (source_x <= sink_x and source_y > sink_y):
-        '''
+    elif source_x <= sink_x and source_y > sink_y:
+        """
         --------------
         |  ^         |
         |  src       |
         |  />>>>snk  |
         --------------
-        '''
+        """
         # \n
         return ((sink_x - source_x), (Ny + sink_y - source_y))
     else:
-        '''
+        """
         ---------------
         |          ^  |
         |         src |
         |  />>snk     |
         |>>/^       />|
         --------------
-        '''
-        return ((Nx - source_x + sink_x), (Ny + - source_y + sink_y))
+        """
+        return ((Nx - source_x + sink_x), (Ny + -source_y + sink_y))
 
 
 class AnnealingClusterPlacer(Annealer):
-
     # pass extra data (the distance matrix) into the constructor
-    def __init__(self, state, ii, dataflow_hypergraph, Nx, Ny, mul_nodes, add_nodes, io_nodes):  # TODO GET RID OF NX NY
+    def __init__(
+        self, state, ii, dataflow_hypergraph, Nx, Ny, mul_nodes, add_nodes, io_nodes
+    ):  # TODO GET RID OF NX NY
         self.Nx = Nx
         self.Ny = Ny
         self.ii = ii
@@ -188,23 +193,23 @@ class AnnealingClusterPlacer(Annealer):
 
         current_sink = 0
         e = 0
-        for hyperedge_id in list(self.dataflow_hypergraph.ordered_hyperedge_id_iterator()):
-            net = self.dataflow_hypergraph.get_hyperedge_attributes(
-                hyperedge_id)
-            source = net['tail'][0]
+        for hyperedge_id in list(
+            self.dataflow_hypergraph.ordered_hyperedge_id_iterator()
+        ):
+            net = self.dataflow_hypergraph.get_hyperedge_attributes(hyperedge_id)
+            source = net["tail"][0]
 
             # source_pe = dfg_node_to_logical_pe[int( source )]
-            for sink in net['head']:
-
+            for sink in net["head"]:
                 # sink_pe = dfg_node_to_logical_pe[ int( sink ) ]
 
                 current_sink = current_sink + 1
                 # //ii is to account for ii>1
                 ii = self.ii
-                source_x = self.state[int(source)//ii] % self.Nx
-                source_y = self.state[int(source)//ii] // self.Nx
-                sink_x = self.state[int(sink)//ii] % self.Nx
-                sink_y = self.state[int(sink)//ii] // self.Nx
+                source_x = self.state[int(source) // ii] % self.Nx
+                source_y = self.state[int(source) // ii] // self.Nx
+                sink_x = self.state[int(sink) // ii] % self.Nx
+                sink_y = self.state[int(sink) // ii] // self.Nx
                 min_distance_x = abs(sink_x - source_x)
                 min_distance_y = abs(sink_y - source_y)
                 # linear
@@ -216,9 +221,10 @@ class AnnealingClusterPlacer(Annealer):
 
 
 class AnnealingNotSurePlacer(Annealer):
-
     # pass extra data (the distance matrix) into the constructor
-    def __init__(self, state, dataflow_hypergraph, Nx, Ny, ii, mul_nodes, add_nodes, io_nodes):  # TODO GET RID OF NX NY
+    def __init__(
+        self, state, dataflow_hypergraph, Nx, Ny, ii, mul_nodes, add_nodes, io_nodes
+    ):  # TODO GET RID OF NX NY
         self.Nx = Nx
         self.Ny = Ny
         self.ii = ii
@@ -256,20 +262,24 @@ class AnnealingNotSurePlacer(Annealer):
 
         current_sink = 0
         e = 0
-        for hyperedge_id in list(self.dataflow_hypergraph.ordered_hyperedge_id_iterator()):
-            net = self.dataflow_hypergraph.get_hyperedge_attributes(
-                hyperedge_id)
-            source = net['tail'][0]
+        for hyperedge_id in list(
+            self.dataflow_hypergraph.ordered_hyperedge_id_iterator()
+        ):
+            net = self.dataflow_hypergraph.get_hyperedge_attributes(hyperedge_id)
+            source = net["tail"][0]
 
             # source_pe = dfg_node_to_logical_pe[int( source )]
-            for sink in net['head']:
-
+            for sink in net["head"]:
                 # sink_pe = dfg_node_to_logical_pe[ int( sink ) ]
 
                 current_sink = current_sink + 1
 
-                min_distance_xy = torus_min_distance_xy(self.state[int(
-                    source)]//self.ii, self.state[int(sink)]//self.ii, self.Nx, self.Ny)
+                min_distance_xy = torus_min_distance_xy(
+                    self.state[int(source)] // self.ii,
+                    self.state[int(sink)] // self.ii,
+                    self.Nx,
+                    self.Ny,
+                )
                 # linear
                 # e = e + in_distance_xy[0]+min_distance_xy[1]
                 # square
@@ -279,26 +289,28 @@ class AnnealingNotSurePlacer(Annealer):
         return e
 
 
-def debug_energy(dataflow_hypergraph, mul_nodes, add_nodes, io_nodes, state,  Nx, Ny, ii):
+def debug_energy(
+    dataflow_hypergraph, mul_nodes, add_nodes, io_nodes, state, Nx, Ny, ii
+):
     e = 0
-    print('Nx='+str(Nx)+', Ny=' + str(Ny))
+    print("Nx=" + str(Nx) + ", Ny=" + str(Ny))
 
     # dfg_node_to_logical_pe = partitioned_netlist.dfg_v_to_partition_id
 
     current_sink = 0
     for hyperedge_id in list(dataflow_hypergraph.ordered_hyperedge_id_iterator()):
         net = dataflow_hypergraph.get_hyperedge_attributes(hyperedge_id)
-        source = net['tail'][0]
+        source = net["tail"][0]
 
         # source_pe = dfg_node_to_logical_pe[ int( source ) ]
-        for sink in net['head']:
-
+        for sink in net["head"]:
             # sink_pe = dfg_node_to_logical_pe[ int( sink ) ]
 
             current_sink = current_sink + 1
 
             min_distance_xy = torus_min_distance_xy(
-                state[int(source)//ii], state[int(sink)//ii], Nx, Ny)
+                state[int(source) // ii], state[int(sink) // ii], Nx, Ny
+            )
             # linear
             # e = e + in_distance_xy[0]+min_distance_xy[1]
             # square

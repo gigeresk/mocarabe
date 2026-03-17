@@ -10,11 +10,11 @@ def write_xdc(x=19, y=69, num_channel=3, p=2, name="mapping.xdc"):
         for pe_x in range(10, 11):  # modify for different PE sizes
             # checking if PE size is less than 100. Can be removed.
             if pe_y * pe_x <= 100:
-
                 f = open(name, "w")
                 f.write(
                     # edit this to modify frequency
-                    "create_clock -period 1.000 -name clk -waveform {0.000 0.500 } [get_ports clk]\n\n\n")
+                    "create_clock -period 1.000 -name clk -waveform {0.000 0.500 } [get_ports clk]\n\n\n"
+                )
                 xtop = x - 1
                 ytop = y - 1
                 ybot = 0
@@ -41,91 +41,222 @@ def write_xdc(x=19, y=69, num_channel=3, p=2, name="mapping.xdc"):
                         else:
                             cur_y = ytop
                             ytop = ytop - 1
-                        f.write("create_pblock y" + str(cur_y) +
-                                "x" + str(cur_x) + "\n")
+                        f.write(
+                            "create_pblock y" + str(cur_y) + "x" + str(cur_x) + "\n"
+                        )
                         # single channel, no fanin muxes needed
                         if num_channel == 1:
                             f.write(
-                                "add_cells_to_pblock [get_pblocks y" + str(cur_y) + "x" + str(
-                                    cur_x) + "] [get_cells -quiet [list {ys[" + str(
-                                    cur_y) + "].xs[" + str(cur_x) + "].torus_switch_inst} {ys[" + str(
-                                    cur_y) + "].xs[" + str(
-                                    cur_x) + "].pe_inst}]]\n")
+                                "add_cells_to_pblock [get_pblocks y"
+                                + str(cur_y)
+                                + "x"
+                                + str(cur_x)
+                                + "] [get_cells -quiet [list {ys["
+                                + str(cur_y)
+                                + "].xs["
+                                + str(cur_x)
+                                + "].torus_switch_inst} {ys["
+                                + str(cur_y)
+                                + "].xs["
+                                + str(cur_x)
+                                + "].pe_inst}]]\n"
+                            )
                         else:
                             for chan in range(0, num_channel):
                                 if chan == 0:
                                     f.write(
-                                        "add_cells_to_pblock [get_pblocks y" + str(cur_y) + "x" + str(
-                                            cur_x) + "] [get_cells -quiet [list {ys[" + str(
-                                            cur_y) + "].xs[" + str(cur_x) + "].cs[" + str(chan) + "].torus_switch_inst} {ys[" + str(
-                                            cur_y) + "].xs[" + str(
-                                            cur_x) + "].pe_inst}]]\n")
+                                        "add_cells_to_pblock [get_pblocks y"
+                                        + str(cur_y)
+                                        + "x"
+                                        + str(cur_x)
+                                        + "] [get_cells -quiet [list {ys["
+                                        + str(cur_y)
+                                        + "].xs["
+                                        + str(cur_x)
+                                        + "].cs["
+                                        + str(chan)
+                                        + "].torus_switch_inst} {ys["
+                                        + str(cur_y)
+                                        + "].xs["
+                                        + str(cur_x)
+                                        + "].pe_inst}]]\n"
+                                    )
                                     f.write(
-                                        "add_cells_to_pblock [get_pblocks y" + str(cur_y) + "x" + str(
-                                            cur_x) + "] [get_cells -quiet [list {ys[" + str(
-                                            cur_y) + "].xs[" + str(
-                                            cur_x) + "].mux_inst}]]\n")
+                                        "add_cells_to_pblock [get_pblocks y"
+                                        + str(cur_y)
+                                        + "x"
+                                        + str(cur_x)
+                                        + "] [get_cells -quiet [list {ys["
+                                        + str(cur_y)
+                                        + "].xs["
+                                        + str(cur_x)
+                                        + "].mux_inst}]]\n"
+                                    )
 
                                 else:
-                                    f.write("add_cells_to_pblock [get_pblocks y" + str(cur_y) + "x" + str(
-                                        cur_x) + "] [get_cells -quiet [list {ys[" + str(
-                                        cur_y) + "].xs[" + str(cur_x) + "].cs[" + str(chan) + "].torus_switch_inst}]]\n")
+                                    f.write(
+                                        "add_cells_to_pblock [get_pblocks y"
+                                        + str(cur_y)
+                                        + "x"
+                                        + str(cur_x)
+                                        + "] [get_cells -quiet [list {ys["
+                                        + str(cur_y)
+                                        + "].xs["
+                                        + str(cur_x)
+                                        + "].cs["
+                                        + str(chan)
+                                        + "].torus_switch_inst}]]\n"
+                                    )
 
                         f.write(
-                            "resize_pblock [get_pblocks y" + str(cur_y) + "x" + str(
-                                cur_x) + "] -add {SLICE_X" + str(
-                                xbase + i * pe_x) + "Y" + str(
-                                ybase + j * pe_y) + ":SLICE_X" + str(xbase + (i + 1) * pe_x - 1) + "Y" + str(
-                                ybase + (j + 1) * pe_y - 1) + "}\n")
+                            "resize_pblock [get_pblocks y"
+                            + str(cur_y)
+                            + "x"
+                            + str(cur_x)
+                            + "] -add {SLICE_X"
+                            + str(xbase + i * pe_x)
+                            + "Y"
+                            + str(ybase + j * pe_y)
+                            + ":SLICE_X"
+                            + str(xbase + (i + 1) * pe_x - 1)
+                            + "Y"
+                            + str(ybase + (j + 1) * pe_y - 1)
+                            + "}\n"
+                        )
                         # to use laguna registers for crossing SLRs
                         if (19 < j < 24) or (43 < j < 48):
                             for chan in range(0, num_channel):
-                                f.write("set_property USER_SLL_REG 1 [get_cells {ys[" + str(
-                                    cur_y) + "].xs[" + str(cur_x) + "].cs[" + str(chan) + "].torus_switch_inst/n_out_r_reg["
-                                    "*]}]\n")
-                                f.write("set_property USER_SLL_REG 1 [get_cells {ys[" + str(
-                                    cur_y) + "].xs[" + str(cur_x) + "].cs[" + str(
-                                    chan) + "].torus_switch_inst/o_to_pe_r_reg[*]}]\n")
-                                f.write("set_property USER_SLL_REG 1 [get_cells {ys[" + str(
-                                    cur_y) + "].xs[" + str(cur_x) + "].cs[" + str(
-                                    chan) + "].torus_switch_inst/e_out_r_reg[*]}]\n")
-                                f.write("set_property USER_SLL_REG 1 [get_cells {ys[" + str(
-                                    cur_y) + "].xs[" + str(cur_x) + "].cs[" + str(
-                                    chan) + "].torus_switch_inst/s_in_reg_reg[*]}]\n")
-                                f.write("set_property USER_SLL_REG 1 [get_cells {ys[" + str(
-                                    cur_y) + "].xs[" + str(cur_x) + "].cs[" + str(
-                                    chan) + "].torus_switch_inst/w_in_reg_reg[*]}]\n")
-                                f.write("set_property USER_SLL_REG 1 [get_cells {ys[" + str(
-                                    cur_y) + "].xs[" + str(cur_x) + "].cs[" + str(
-                                    chan) + "].torus_switch_inst/i_from_pe_reg_reg[*]}]\n")
+                                f.write(
+                                    "set_property USER_SLL_REG 1 [get_cells {ys["
+                                    + str(cur_y)
+                                    + "].xs["
+                                    + str(cur_x)
+                                    + "].cs["
+                                    + str(chan)
+                                    + "].torus_switch_inst/n_out_r_reg["
+                                    "*]}]\n"
+                                )
+                                f.write(
+                                    "set_property USER_SLL_REG 1 [get_cells {ys["
+                                    + str(cur_y)
+                                    + "].xs["
+                                    + str(cur_x)
+                                    + "].cs["
+                                    + str(chan)
+                                    + "].torus_switch_inst/o_to_pe_r_reg[*]}]\n"
+                                )
+                                f.write(
+                                    "set_property USER_SLL_REG 1 [get_cells {ys["
+                                    + str(cur_y)
+                                    + "].xs["
+                                    + str(cur_x)
+                                    + "].cs["
+                                    + str(chan)
+                                    + "].torus_switch_inst/e_out_r_reg[*]}]\n"
+                                )
+                                f.write(
+                                    "set_property USER_SLL_REG 1 [get_cells {ys["
+                                    + str(cur_y)
+                                    + "].xs["
+                                    + str(cur_x)
+                                    + "].cs["
+                                    + str(chan)
+                                    + "].torus_switch_inst/s_in_reg_reg[*]}]\n"
+                                )
+                                f.write(
+                                    "set_property USER_SLL_REG 1 [get_cells {ys["
+                                    + str(cur_y)
+                                    + "].xs["
+                                    + str(cur_x)
+                                    + "].cs["
+                                    + str(chan)
+                                    + "].torus_switch_inst/w_in_reg_reg[*]}]\n"
+                                )
+                                f.write(
+                                    "set_property USER_SLL_REG 1 [get_cells {ys["
+                                    + str(cur_y)
+                                    + "].xs["
+                                    + str(cur_x)
+                                    + "].cs["
+                                    + str(chan)
+                                    + "].torus_switch_inst/i_from_pe_reg_reg[*]}]\n"
+                                )
                                 for p_var in range(p):
-                                    f.write("set_property USER_SLL_REG 1 [get_cells {ys[" + str(
-                                        cur_y) + "].xs[" + str(cur_x) + "].cs[" + str(chan) + "].torus_switch_inst"
-                                        "/genblk1["+str(p_var)+"].n_out_pipe_reg[" + str(
-                                        p_var) + "][*]}]\n")
-                                    f.write("set_property USER_SLL_REG 1 [get_cells {ys[" + str(
-                                        cur_y) + "].xs[" + str(cur_x) + "].cs[" + str(chan) + "].torus_switch_inst"
-                                        "/genblk1["+str(p_var)+"].e_out_pipe_reg[" + str(
-                                        p_var) + "][*]}]\n")
-                                    f.write("set_property USER_SLL_REG 1 [get_cells {ys[" + str(
-                                        cur_y) + "].xs[" + str(cur_x) + "].cs[" + str(chan) + "].torus_switch_inst"
-                                        "/genblk1["+str(p_var)+"].o_to_pe_pipe_reg[" + str(
-                                        p_var) + "][*]}]\n")
-                            f.write("set_property gridtypes {DSP48E2 SLICE} [get_pblocks y" + str(cur_y) + "x" + str(
-                                cur_x) + "]\n")
+                                    f.write(
+                                        "set_property USER_SLL_REG 1 [get_cells {ys["
+                                        + str(cur_y)
+                                        + "].xs["
+                                        + str(cur_x)
+                                        + "].cs["
+                                        + str(chan)
+                                        + "].torus_switch_inst"
+                                        "/genblk1["
+                                        + str(p_var)
+                                        + "].n_out_pipe_reg["
+                                        + str(p_var)
+                                        + "][*]}]\n"
+                                    )
+                                    f.write(
+                                        "set_property USER_SLL_REG 1 [get_cells {ys["
+                                        + str(cur_y)
+                                        + "].xs["
+                                        + str(cur_x)
+                                        + "].cs["
+                                        + str(chan)
+                                        + "].torus_switch_inst"
+                                        "/genblk1["
+                                        + str(p_var)
+                                        + "].e_out_pipe_reg["
+                                        + str(p_var)
+                                        + "][*]}]\n"
+                                    )
+                                    f.write(
+                                        "set_property USER_SLL_REG 1 [get_cells {ys["
+                                        + str(cur_y)
+                                        + "].xs["
+                                        + str(cur_x)
+                                        + "].cs["
+                                        + str(chan)
+                                        + "].torus_switch_inst"
+                                        "/genblk1["
+                                        + str(p_var)
+                                        + "].o_to_pe_pipe_reg["
+                                        + str(p_var)
+                                        + "][*]}]\n"
+                                    )
+                            f.write(
+                                "set_property gridtypes {DSP48E2 SLICE} [get_pblocks y"
+                                + str(cur_y)
+                                + "x"
+                                + str(cur_x)
+                                + "]\n"
+                            )
                         else:
-                            f.write("set_property gridtypes {DSP48E2 SLICE} [get_pblocks y" + str(cur_y) + "x" + str(
-                                cur_x) + "]\n")
+                            f.write(
+                                "set_property gridtypes {DSP48E2 SLICE} [get_pblocks y"
+                                + str(cur_y)
+                                + "x"
+                                + str(cur_x)
+                                + "]\n"
+                            )
 
                         # f.write("add_cells_to_pblock [get_pblocks pblock_dsp] [get_cells g_dsp_true1.U21/* -filter {
                         # REF_NAME == DSP48E1}]")
                         f.write(
-                            "add_cells_to_pblock [get_pblocks y" + str(cur_y) + "x" + str(
-                                cur_x) + "] [get_cells ys[" + str(
-                                cur_y) + "].xs[" + str(cur_x) + "].pe_inst/* -filter {REF_NAME == DSP48E2}]\n")
+                            "add_cells_to_pblock [get_pblocks y"
+                            + str(cur_y)
+                            + "x"
+                            + str(cur_x)
+                            + "] [get_cells ys["
+                            + str(cur_y)
+                            + "].xs["
+                            + str(cur_x)
+                            + "].pe_inst/* -filter {REF_NAME == DSP48E2}]\n"
+                        )
                         f.write("\n")
                     f.write("\n\n")
                 f.close()
+
 
 # generate the xdc file based on the input arguments
 
@@ -150,13 +281,27 @@ def generate_xdc():
             exit()
         else:
             if len(sys.argv) == 5:
-                name = sys.argv[4]+".xdc"
-                print("Generating XDC with the following parameters: x =",
-                      x, ", y =", y, ", num_channel =", c, "output file:", name)
+                name = sys.argv[4] + ".xdc"
+                print(
+                    "Generating XDC with the following parameters: x =",
+                    x,
+                    ", y =",
+                    y,
+                    ", num_channel =",
+                    c,
+                    "output file:",
+                    name,
+                )
                 write_xdc(x, y, c, p, name)
             else:
-                print("Generating XDC with the following parameters: x =",
-                      x, ", y =", y, ", num_channel =", c)
+                print(
+                    "Generating XDC with the following parameters: x =",
+                    x,
+                    ", y =",
+                    y,
+                    ", num_channel =",
+                    c,
+                )
                 write_xdc(x, y, c, p)
 
 

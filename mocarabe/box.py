@@ -7,7 +7,11 @@ class Box:
         if end[0] < start[0] and end[1] < start[1]:
             for x in range(0, modulo):
                 for y in range(0, modulo):
-                    if (x > end[0] and x < start[0]) or (y > end[1] and y < start[1]) or (x == end[0] and y > end[1]):
+                    if (
+                        (x > end[0] and x < start[0])
+                        or (y > end[1] and y < start[1])
+                        or (x == end[0] and y > end[1])
+                    ):
                         self.negativeBox.append((x, y))
         elif end[0] < start[0]:  # end comes before start in x dir only
             for x in range(0, modulo):

@@ -6,3 +6,5 @@ proj/
 .venv/
 __pycache__/
 *.py[cod]
+CLAUDE.md
+claude-notes.txt

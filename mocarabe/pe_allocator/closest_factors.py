@@ -20,7 +20,7 @@ class ClosestFactorsAllocator(PEAllocatorStrategy):
             I/O)
 
         II : int Initiation interval/context count.  Determines how many DFG
-            nodes get mapped to one PE  
+            nodes get mapped to one PE
 
         io_diffusion : float
             More info to be displayed (default is None)
@@ -39,7 +39,6 @@ class ClosestFactorsAllocator(PEAllocatorStrategy):
         operator_count = {}
 
         for operator_label in node_operators.values():
-
             if operator_label not in operator_count:
                 operator_count[operator_label] = 1
             else:
@@ -48,23 +47,25 @@ class ClosestFactorsAllocator(PEAllocatorStrategy):
 
         num_partitions_given_to_operator = {}
         for op, count in operator_count.items():
-
             num_partitions_given_to_operator
-            num_partitions_given_to_operator[op] = math.ceil(
-                count / (arith_diffusion))
+            num_partitions_given_to_operator[op] = math.ceil(count / (arith_diffusion))
 
         # how many of each IO operator?
 
-        num_partitions_given_to_operator['OUT'] = math.ceil(
-            len(node_out) / (io_diffusion))
-        num_partitions_given_to_operator['IN'] = math.ceil(
-            len(node_in) / (io_diffusion))
+        num_partitions_given_to_operator["OUT"] = math.ceil(
+            len(node_out) / (io_diffusion)
+        )
+        num_partitions_given_to_operator["IN"] = math.ceil(
+            len(node_in) / (io_diffusion)
+        )
 
         system_size = sum(num_partitions_given_to_operator.values())
 
         while self._is_prime(system_size):
             system_size = system_size + 1
-            num_partitions_given_to_operator['IN'] = num_partitions_given_to_operator['IN'] + 1
+            num_partitions_given_to_operator["IN"] = (
+                num_partitions_given_to_operator["IN"] + 1
+            )
 
         # closest factors
         Nx, Ny = self._closest_factors(system_size)

@@ -18,18 +18,30 @@ def run_simulation(dfg, ii, iod=1, ard=1, c=20, place_time=0.1, sched_method="IL
     # Run mocarabe to generate the project
     result = subprocess.run(
         [
-            "python3", "run_mocarabe.py",
-            "-dfg", dfg,
-            "-iod", str(iod),
-            "-ard", str(ard),
-            "-II", str(ii),
-            "-C", str(c),
-            "--place_time", str(place_time),
-            "--sched_method", sched_method,
+            "python3",
+            "run_mocarabe.py",
+            "-dfg",
+            dfg,
+            "-iod",
+            str(iod),
+            "-ard",
+            str(ard),
+            "-II",
+            str(ii),
+            "-C",
+            str(c),
+            "--place_time",
+            str(place_time),
+            "--sched_method",
+            sched_method,
         ],
-        capture_output=True, text=True, cwd=MOCARABE_ROOT
+        capture_output=True,
+        text=True,
+        cwd=MOCARABE_ROOT,
     )
-    assert result.returncode == 0, f"run_mocarabe.py failed:\n{result.stdout}\n{result.stderr}"
+    assert result.returncode == 0, (
+        f"run_mocarabe.py failed:\n{result.stdout}\n{result.stderr}"
+    )
 
     # Extract the rtl directory from the output
     match = re.search(r"cd (proj/\S+/rtl/)", result.stdout)
@@ -97,22 +109,32 @@ def test_int_poly_quadratic_ii3():
 # Root cause unclear — likely the NoC routing model becomes overconstrained when
 # the number of nets is large relative to C*II.
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason="ILP scheduling infeasible: int_sobel has 25 nets on 2x13 torus with C=20")
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="ILP scheduling infeasible: int_sobel has 25 nets on 2x13 torus with C=20",
+)
 def test_xfail_int_sobel_ii1():
     output = run_simulation("hgr/int_sobel", ii=1)
     assert_no_errors(output)
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason="ILP scheduling infeasible: int_iir8 has 51 nets, SCIP finds no solution")
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="ILP scheduling infeasible: int_iir8 has 51 nets, SCIP finds no solution",
+)
 def test_xfail_int_iir8_ii1():
     output = run_simulation("hgr/int_iir8", ii=1)
     assert_no_errors(output)
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason="ILP scheduling infeasible: int_dct has 69 nets, SCIP finds no solution")
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="ILP scheduling infeasible: int_dct has 69 nets, SCIP finds no solution",
+)
 def test_xfail_int_dct_ii1():
     output = run_simulation("hgr/int_dct", ii=1)
     assert_no_errors(output)
@@ -123,8 +145,12 @@ def test_xfail_int_dct_ii1():
 # generate_op_addresses_and_op_port_select().  Observed when 'C' is raised to give
 # the scheduler more channels but the placement still produces conflicting edges.
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason="pe_memory_gen port conflict: two operands claim the same PE port/timeslot")
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="pe_memory_gen port conflict: two operands claim the same PE port/timeslot",
+)
 def test_xfail_int_sobel_ii1_c40():
     output = run_simulation("hgr/int_sobel", ii=1, c=40)
     assert_no_errors(output)
@@ -135,8 +161,12 @@ def test_xfail_int_sobel_ii1_c40():
 # the testbench-driven value — it outputs 0 or X instead, cascading failures.
 # Observed in int_level1_linear where nodes x2/c2 share PEs with adders.
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason="placer bug: IO node packed with compute node; PECONF set to compute type")
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="placer bug: IO node packed with compute node; PECONF set to compute type",
+)
 def test_xfail_int_level1_linear_ii1():
     output = run_simulation("hgr/int_level1_linear", ii=1, c=40, place_time=0.5)
     assert_no_errors(output)

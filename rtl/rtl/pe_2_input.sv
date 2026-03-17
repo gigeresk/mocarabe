@@ -14,6 +14,7 @@ module pe_2_input #(
     input  wire clk,        // clock
     input wire `D_WIDTH i_operand0, //1st input from Noc
     input wire `D_WIDTH i_operand1, //2nd input from Noc
+    input wire `D_WIDTH io_input,   // driven by testbench for IO PEs (OP==2)
     output reg done_a_pe,
     output wire `D_WIDTH result
 );
@@ -82,8 +83,8 @@ module pe_2_input #(
         else if (OP == 1) begin
             result_pipe[0] <= op1_reg * op2_reg;
         end
-        else if ( OP == 2) begin//IO PE
-            result_pipe[0] <=  (100*(X+Y*X_MAX)) + global_cycle;
+        else if ( OP == 2) begin//IO PE: value driven by testbench via io_input
+            result_pipe[0] <= io_input;
         end
         global_cycle <= global_cycle + 1;
         // $display("global cycle: %0d\n",global_cycle);

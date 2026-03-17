@@ -67,3 +67,76 @@ def test_int_adder_chain_ii2():
 def test_int_adder_chain_ii3():
     output = run_simulation("hgr/int_adder_chain", ii=3)
     assert_no_errors(output)
+
+
+def test_int_adder_chain_ii4():
+    output = run_simulation("hgr/int_adder_chain", ii=4)
+    assert_no_errors(output)
+
+
+def test_int_poly_quadratic_ii1():
+    output = run_simulation("hgr/int_poly_quadratic", ii=1, c=40)
+    assert_no_errors(output)
+
+
+def test_int_poly_quadratic_ii2():
+    output = run_simulation("hgr/int_poly_quadratic", ii=2, c=40)
+    assert_no_errors(output)
+
+
+def test_int_poly_quadratic_ii3():
+    output = run_simulation("hgr/int_poly_quadratic", ii=3, c=40)
+    assert_no_errors(output)
+
+
+# ── Known-failing benchmarks ──────────────────────────────────────────────────
+# These tests document current bugs so we notice when they get fixed.
+# Each uses strict=True: an unexpected pass (XPASS) will fail the suite.
+
+# Bug: ILP scheduler produces infeasible model for larger benchmarks at C=20.
+# Root cause unclear — likely the NoC routing model becomes overconstrained when
+# the number of nets is large relative to C*II.
+
+@pytest.mark.xfail(strict=True, raises=AssertionError,
+                   reason="ILP scheduling infeasible: int_sobel has 25 nets on 2x13 torus with C=20")
+def test_xfail_int_sobel_ii1():
+    output = run_simulation("hgr/int_sobel", ii=1)
+    assert_no_errors(output)
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError,
+                   reason="ILP scheduling infeasible: int_iir8 has 51 nets, SCIP finds no solution")
+def test_xfail_int_iir8_ii1():
+    output = run_simulation("hgr/int_iir8", ii=1)
+    assert_no_errors(output)
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError,
+                   reason="ILP scheduling infeasible: int_dct has 69 nets, SCIP finds no solution")
+def test_xfail_int_dct_ii1():
+    output = run_simulation("hgr/int_dct", ii=1)
+    assert_no_errors(output)
+
+
+# Bug: pe_memory_gen port conflict — two operands are assigned the same PE input
+# port in the same schedule timeslot.  Raises AssertionError in
+# generate_op_addresses_and_op_port_select().  Observed when 'C' is raised to give
+# the scheduler more channels but the placement still produces conflicting edges.
+
+@pytest.mark.xfail(strict=True, raises=AssertionError,
+                   reason="pe_memory_gen port conflict: two operands claim the same PE port/timeslot")
+def test_xfail_int_sobel_ii1_c40():
+    output = run_simulation("hgr/int_sobel", ii=1, c=40)
+    assert_no_errors(output)
+
+
+# Bug: placer co-locates an IO node with a compute node at the same PE.
+# PECONF is then set to the compute type (add/mul), so the IO PE never outputs
+# the testbench-driven value — it outputs 0 or X instead, cascading failures.
+# Observed in int_level1_linear where nodes x2/c2 share PEs with adders.
+
+@pytest.mark.xfail(strict=True, raises=AssertionError,
+                   reason="placer bug: IO node packed with compute node; PECONF set to compute type")
+def test_xfail_int_level1_linear_ii1():
+    output = run_simulation("hgr/int_level1_linear", ii=1, c=40, place_time=0.5)
+    assert_no_errors(output)

@@ -22,7 +22,6 @@ reg [1:0] sel_memory1 [SCHED_LEN-1:0];
 
 initial begin //load sel memory
     $display("Loading sel memories at (%0d,%0d)", X, Y);
-    //TODO: uncomment this when testing final stuff in the end to end flow
     //$readmemb({"mux3_sel_mem_x", $sformatf("%0d",X), "_y", $sformatf("%0d",Y), "0.dat"}, sel_memory0);
     //$readmemb({"mux3_sel_mem_x", $sformatf("%0d",X), "_y", $sformatf("%0d",Y), "1.dat"}, sel_memory1);
     $readmemb("mux3_sel_mem0.dat", sel_memory0);

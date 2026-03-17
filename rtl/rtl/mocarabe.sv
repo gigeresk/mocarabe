@@ -14,6 +14,7 @@ module mocarabe #(
 ) (
     input  wire clk,
     input  wire rst,
+    input  wire `D_WIDTH io_data_in `XY,
     output wire `D_WIDTH pe_o `XY,
     output wire `D_WIDTH pe_input0_o `XY,
     output wire `D_WIDTH pe_input1_o `XY,
@@ -76,6 +77,7 @@ module mocarabe #(
                         .done_a_pe(done_a_pe[(x) + (y)*X_MAX]),
                         .i_operand0(mux_to_pe [0][(x) + (y)*X_MAX]),
                         .i_operand1(mux_to_pe [1][(x) + (y)*X_MAX]),
+                        .io_input(io_data_in[(x) + (y)*X_MAX]),
                         .result(i_from_pe[(x) + (y)*X_MAX])
                     );
                 for (c = 0; c < NUM_CHANNEL; c = c + 1) begin : cs

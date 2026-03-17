@@ -1,4 +1,4 @@
-# src/ README
+# mocarabe/ README
 
 ## auto.py
 auto.py is the driver for tor the Mocarabe compiler.  
@@ -9,7 +9,7 @@ e.g. `python3 auto.py -dfg hls/int_poly3 -iod 1 -ard 1 -II 1 -C 2 --place_time 0
 - `-dfg`: path to the dataflow graph directory
 - `-II`: initiation interval
 - `-T`: schedule length: this should be exactly the same as     `II`.  (T is the parameter that the ILP scheduler uses, while II is used to determine resource sharing)
-- `--log`: Log output is written to this `csv` around schedule time (lines commented ('#') when scheduling starts and when C has to be incremented, but full line taken up on final success/failure).  Look at `src/scheduler/__init__.py` for details.
+- `--log`: Log output is written to this `csv` around schedule time (lines commented ('#') when scheduling starts and when C has to be incremented, but full line taken up on final success/failure).  Look at `mocarabe/scheduler/__init__.py` for details.
 - `--tag`: A log feature: a column is taken up by this string. Useful in scripts when comparing two approaches (e.g. "PF" or "ILP", as those aren't logged (though maybe they should be))
 - `--place_time`: Annealing placement needs a time (it's not accurate, it somehow finds an iteration count based on this number and some other factor- could change this with experimentation).  For something in the order of 4x4, 0.1-0.2 is sufficient.  For the largest benchmarks, and for experiments, 1 is my go-to.
 - `--sched_method`: ILP or PF.  Default is ILP.
@@ -76,7 +76,7 @@ The scheduler currently has two strategies, an ILP formulation and a pathfinder 
 Please refer to the (first?) paper for an overview of constraints/objective function.
 
 ### PF Scheduler
-Refer to the reference paper for some information (A Bandwidth-Optimized Routing Algorithm for Hybrid FPGA Networks-on-Chip).  This code is optimized in terms of runtime but is more complicated to implement, and less effective, than ILP.  The ResourceGraph class in src/resource_graph.py is of note.  This code has some good debugging tools built in.
+Refer to the reference paper for some information (A Bandwidth-Optimized Routing Algorithm for Hybrid FPGA Networks-on-Chip).  This code is optimized in terms of runtime but is more complicated to implement, and less effective, than ILP.  The ResourceGraph class in mocarabe/resource_graph.py is of note.  This code has some good debugging tools built in.
 
 ## rtl_gen
 A typical rtl_gen script workflow (see hwgen_develop.py) is

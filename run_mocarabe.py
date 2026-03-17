@@ -8,16 +8,16 @@ import warnings
 import numpy as np
 from networkx.drawing.nx_pydot import write_dot
 
-from src.netlist import Netlist
-from src.device import Device
-import src.pe_allocator as pe_alloc
-import src.placer as placr
-import src.scheduler as schedulr
-from src.rtl_gen import RTLGenerator
-from src.file_util import FilePathsHelper
-from src.resource_graph import ResourceGraph
+from mocarabe.cad.netlist import Netlist
+from mocarabe.device import Device
+import mocarabe.pe_allocator as pe_alloc
+import mocarabe.placer as placr
+import mocarabe.scheduler as schedulr
+from mocarabe.rtl_gen import RTLGenerator
+from mocarabe.file_util import FilePathsHelper
+from mocarabe.resource_graph import ResourceGraph
 
-from src.sim import Sim
+from mocarabe.sim import Sim
 
 parser = argparse.ArgumentParser(description='Space-Time ILP Scheduler')
 parser.add_argument('-dfg', metavar='dfg dir', required=True,
@@ -231,7 +231,7 @@ if sched_method == 'ILP':
         Sim.print_iverilog_sim_cmd(file_helper)
 
         print("\nFor a visualization of the schedule:\n")
-        print("python3 src/torus_gui_freeze.py --proj {} --zoom 5".format(file_helper.proj_dir))
+        print("python3 mocarabe/torus_gui_freeze.py --proj {} --zoom 5".format(file_helper.proj_dir))
         print("\n")
 
 elif sched_method == 'PF':
@@ -242,7 +242,7 @@ elif sched_method == 'PF':
     scheduled_netlist = schedulr.PathfinderScheduler().run_scheduling_with_timeout(
         device, placed_netlist, placement_time_delta, file_helper, num_partitions_given_to_operator, tag)
 
-    print("python3 src/torus_gui_freeze.py --proj {} --zoom 5".format(file_helper.proj_dir))
+    print("python3 mocarabe/torus_gui_freeze.py --proj {} --zoom 5".format(file_helper.proj_dir))
     verilog_header = RTLGenerator.verilog_header_gen(
         file_helper.proj_dir + 'rtl/', device, pe_operators)
     verilog_header_filename = file_helper.rtl_dir + 'benchmark.h'

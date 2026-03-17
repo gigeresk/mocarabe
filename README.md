@@ -31,13 +31,13 @@ sudo apt install iverilog
 ```
 
 ## Running Benchmarks through Mocarabe
-Example usage: `python mocarabe.py -dfg hgr/int_poly3 -iod 1 -ard 1 -II 1 -C 2 --place_time 0.1 --sched_method ILP`
+Example usage: `python run_mocarabe.py -dfg hgr/int_poly3 -iod 1 -ard 1 -II 1 -C 2 --place_time 0.1 --sched_method ILP`
 
 ### Command line arguments
 
 - `-dfg`: path to the dataflow graph directory
 - `-II`: initiation interval: also the schedule length and the desired level of resource sharing.
-- `--log`: Log output is written to this `csv` around schedule time (lines commented ('#') when scheduling starts and when C has to be incremented, but full line taken up on final success/failure).  Look at `src/scheduler/__init__.py` for details.
+- `--log`: Log output is written to this `csv` around schedule time (lines commented ('#') when scheduling starts and when C has to be incremented, but full line taken up on final success/failure).  Look at `mocarabe/scheduler/__init__.py` for details.
 - `--tag`: A log feature: a column is taken up by this string. Useful in scripts when comparing two approaches (e.g. "PF" or "ILP", as those aren't logged (though maybe they should be))
 - `--place_time`: Annealing placement needs a time (it's not accurate, it somehow finds an iteration count based on this number and some other factor- could change this with experimentation).  For something in the order of 4x4, 0.1-0.2 is sufficient.  For the largest benchmarks, and for experiments, 1 is my go-to.
 - `--sched_method`: ILP or PF.  Default is ILP.
@@ -48,7 +48,7 @@ Example usage: `python mocarabe.py -dfg hgr/int_poly3 -iod 1 -ard 1 -II 1 -C 2 -
 Running the command above generates a command in the end which you can use to visualize the system and use the GUI. A sample command would look like this:
 
 ```bash
-python3 src/torus_gui_freeze.py --proj proj/benchmark_name--time_when_benchmark_was_ran/ --zoom 5
+python3 mocarabe/torus_gui_freeze.py --proj proj/benchmark_name--time_when_benchmark_was_ran/ --zoom 5
 ```
 
 You can paste the command in your terminal to open GUI. The image below shows a sample GUI:

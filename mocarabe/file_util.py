@@ -1,6 +1,4 @@
-# -*- coding: future_fstrings -*-
 import os
-import sys
 import json
 
 
@@ -53,7 +51,6 @@ class FilePathsHelper:
 
 def mkdir_if_needed(dir):
     if not os.path.exists(dir):
-        # sys.stdout.write( f"Creating {dir} \n" )
         os.makedirs(dir)
 
 

@@ -1,7 +1,7 @@
 import networkx as nx
 import itertools
 
-from src.resource_type import ResourceType
+from mocarabe.resource_type import ResourceType
 
 
 class ResourceGraph(nx.DiGraph):

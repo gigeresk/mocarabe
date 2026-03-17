@@ -9,10 +9,10 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.netlist import Netlist
-from src.device import Device
-from src.rtl_gen import RTLGenerator
-from src.resource_graph import ResourceGraph
+from mocarabe.cad.netlist import Netlist
+from mocarabe.device import Device
+from mocarabe.rtl_gen import RTLGenerator
+from mocarabe.resource_graph import ResourceGraph
 
 PROJ_DIR = 'proj/int_adder_chain_--14-03-26-20.56.47/'
 HGR_FILE = PROJ_DIR + 'hgr/int_adder_chain.hgr'

@@ -1,8 +1,8 @@
-
 import fnmatch
 import os
 import subprocess
 import pytest
+
 
 # Test that any RTL in the repo can pass a slang-based lint
 # check.  There are a couple of dirty tricks that are needed
@@ -29,21 +29,24 @@ def test_lint():
 
     # Provide this test directory's data subdirectory as a place to
     # supply mock include files for lint testing
-    test_inc_dir = os.path.join(os.path.dirname(__file__),
-                                'data')
+    test_inc_dir = os.path.join(os.path.dirname(__file__), "data")
 
-    for root, dirs, files in os.walk("."): # TODO
+    for root, dirs, files in os.walk("."):  # TODO
         for filename in files:
-            if (fnmatch.fnmatch(filename, '*.v')):
+            if fnmatch.fnmatch(filename, "*.v"):
                 fullpath = os.path.join(root, filename)
-                lint_result = subprocess.run(['slang',
-                                              '--lint-only',
-                                              '-I',
-                                              test_inc_dir,
-                                              '+define+USE_SYSTEMVERILOG',
-                                              fullpath])
-                if (lint_result.returncode != 0):
+                lint_result = subprocess.run(
+                    [
+                        "slang",
+                        "--lint-only",
+                        "-I",
+                        test_inc_dir,
+                        "+define+USE_SYSTEMVERILOG",
+                        fullpath,
+                    ]
+                )
+                if lint_result.returncode != 0:
                     print(f"Lint failed for {fullpath}")
                     errors += 1
 
-    assert errors == 0, 'Lint failed'
+    assert errors == 0, "Lint failed"

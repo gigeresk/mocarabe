@@ -3,7 +3,7 @@ import math
 
 
 def _closest_factors(n):
-    assert (n > 0), 'System size must be greater than 0'
+    assert n > 0, "System size must be greater than 0"
 
     test_num = int(math.sqrt(n))
     while (n % test_num) != 0:
@@ -11,8 +11,8 @@ def _closest_factors(n):
 
     x = test_num
     y = n / test_num
-    assert (x == int(x))
-    assert (y == int(y))
+    assert x == int(x)
+    assert y == int(y)
     x = int(x)
     y = int(y)
 
@@ -37,7 +37,7 @@ def _is_prime(n):
     while f <= r:
         if n % f == 0:
             return False
-        if n % (f+2) == 0:
+        if n % (f + 2) == 0:
             return False
         f += 6
     return True
@@ -47,21 +47,28 @@ FULL_DEVICE_X = 19
 FULL_DEVICE_Y = 69
 # print('benchmark,ii,+ers,*ers,IOers,chip_unroll')
 
-print('benchmark,ii,Nx,Ny,+,*,IO,+ers,*ers,IOers,dfg_unroll,chip_unroll')
+print("benchmark,ii,Nx,Ny,+,*,IO,+ers,*ers,IOers,dfg_unroll,chip_unroll")
 rowcount = -1
-with open('ops_from_vivado_comparison.csv', newline='') as csvfile:
-    opreader = csv.reader(csvfile, delimiter=',')
+with open("ops_from_vivado_comparison.csv", newline="") as csvfile:
+    opreader = csv.reader(csvfile, delimiter=",")
     for row in opreader:
         rowcount += 1
         if rowcount == 0:
             continue
 
         for ii in range(2, 6):
-            benchmark, adds, multiplies, ios = row[0], int(
-                row[1]), int(row[2]), int(row[3])
+            benchmark, adds, multiplies, ios = (
+                row[0],
+                int(row[1]),
+                int(row[2]),
+                int(row[3]),
+            )
             unroll = 1
-            if (adds < ii and adds != 0) or (multiplies < ii and multiplies != 0) or (ios < ii and ios != 0):
-
+            if (
+                (adds < ii and adds != 0)
+                or (multiplies < ii and multiplies != 0)
+                or (ios < ii and ios != 0)
+            ):
                 unroll = ii
 
                 adds = adds * unroll
@@ -74,7 +81,6 @@ with open('ops_from_vivado_comparison.csv', newline='') as csvfile:
 
             system_size = adders + multipliers + ioers
             while _is_prime(system_size):
-
                 system_size = system_size + 1
 
             Nx, Ny = _closest_factors(system_size)
@@ -83,7 +89,30 @@ with open('ops_from_vivado_comparison.csv', newline='') as csvfile:
             unroll_y = FULL_DEVICE_Y // Ny
             chip_unroll = unroll_x * unroll_y * unroll
             # import pdb; pdb.set_trace()
-            print(benchmark+","+str(ii)+","+str(Nx)+","+str(Ny)+","+str(adds)+","+str(multiplies)+"," +
-                  str(ios)+","+str(adders)+","+str(multipliers)+","+str(ioers)+","+str(unroll)+","+str(chip_unroll))
+            print(
+                benchmark
+                + ","
+                + str(ii)
+                + ","
+                + str(Nx)
+                + ","
+                + str(Ny)
+                + ","
+                + str(adds)
+                + ","
+                + str(multiplies)
+                + ","
+                + str(ios)
+                + ","
+                + str(adders)
+                + ","
+                + str(multipliers)
+                + ","
+                + str(ioers)
+                + ","
+                + str(unroll)
+                + ","
+                + str(chip_unroll)
+            )
 
             # print(benchmark+","+str(ii)+","+str(adders)+","+str(multipliers)+","+str(ioers)+","+str(chip_unroll))

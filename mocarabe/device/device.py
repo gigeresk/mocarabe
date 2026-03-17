@@ -4,6 +4,7 @@ from dataclasses import dataclass
 @dataclass
 class Device:
     """Container for device configuration"""
+
     Nx: int
     Ny: int
     physical_channels: int

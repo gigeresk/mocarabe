@@ -1,4 +1,4 @@
-'''
+"""
 Need to generate mocarabe.v for simulation, can't use genvar effectively.
 This shouldn't be used for synthesis because there are too many top-level output ports (one for each PE, pe_out)
 Keep up to date with master RTL.
@@ -9,13 +9,12 @@ Diff:
 +/- Replaced generate loop (and the genvars) with unique instance, each with
   unique names (and replacing x,y,c with actual values)
 Don't leave these for synthesis.  This is an easier way to verify correctness
-'''
+"""
 
 
 def mocarabe_tb_gen(rtl_dir, Nx, Ny, C):
 
-    top = \
-        '''
+    top = """
 `include "mocarabe.h"
 `include "benchmark.h"
 
@@ -70,7 +69,7 @@ module mocarabe #(
         end
     end
 
-'''
+"""
     print(top)
 
     instances_string = ""
@@ -78,9 +77,9 @@ module mocarabe #(
 
     for y in range(Ny):
         for x in range(Nx):
-
-            instances_string = instances_string + \
-                f'''
+            instances_string = (
+                instances_string
+                + f"""
 pe #(
     .SCHED_LEN(SCHED_LEN),
     .X_MAX(X_MAX),
@@ -114,12 +113,14 @@ mux_inst_x{x}_y{y}
     .out0(mux_to_pe0[({x}) + ({y})*X_MAX]),
     .out1(mux_to_pe1[({x}) + ({y})*X_MAX])
 );
-'''
+"""
+            )
     for y in range(Ny):
         for x in range(Nx):
             for c in range(C):
-                instances_string = instances_string +  \
-                    f'''
+                instances_string = (
+                    instances_string
+                    + f"""
 torus_switch #(
     .SCHED_LEN(SCHED_LEN),
     .X_MAX(X_MAX),
@@ -140,11 +141,11 @@ torus_switch #(
         .n_out(vert[({x}) + ({y})*X_MAX][{c}]),
         .e_out(horiz[({x}) + ({y})*X_MAX][{c}])
     );
-    '''
+    """
+                )
     print(instances_string)
 
-    tail = \
-        '''
+    tail = """
     assign done_all = &done;
     assign done_pe = &done_a_pe;
 `ifdef DEBUG
@@ -155,7 +156,7 @@ torus_switch #(
 `endif
 
 endmodule
-'''
+"""
 
     f = open(f"{rtl_dir}/mocarabe_tb.v", "w+")
     f.write(top + instances_string + tail)

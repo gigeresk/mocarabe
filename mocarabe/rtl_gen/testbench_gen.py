@@ -8,7 +8,7 @@ def testbench_gen(rtl_dir, Nx, Ny, C, asserts_string):
             base = 100 * pe_idx
             io_assigns += f"    assign io_data[{pe_idx}] = {base} + tb_cycle;\n"
 
-    top = f'''
+    top = f"""
 `include "benchmark.h"
 `include "mocarabe.h"
 
@@ -63,15 +63,14 @@ module mocarabe_tb #(
 
     initial begin
         $display("Begin testbench");
-'''
+"""
     # asserts go here
 
-    end_string = \
-        '''
+    end_string = """
     end
 
 endmodule
-'''
+"""
 
     f = open(f"{rtl_dir}/mocarabe_tb.sv", "w+")
     f.write(top + asserts_string + end_string)

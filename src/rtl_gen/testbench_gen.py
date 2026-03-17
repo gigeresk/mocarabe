@@ -22,6 +22,8 @@ module mocarabe_tb #(
     wire done_pe;
     wire done_all;
 
+    integer fail_count = 0;
+
 	initial begin
 		clk = 0;
 		rst = 0;
@@ -29,7 +31,7 @@ module mocarabe_tb #(
 
 	mocarabe #(
 		.X_MAX(X_MAX), .Y_MAX(Y_MAX))
-		p(.clk(clk), .rst(rst), .pe_o(pe_out), .pe_input0_o(pe_in0), .pe_input1_o(pe_in0), .done_pe(done_pe), .done_all(done_all));
+		p(.clk(clk), .rst(rst), .pe_o(pe_out), .pe_input0_o(pe_in0), .pe_input1_o(pe_in1), .done_pe(done_pe), .done_all(done_all));
 
     always begin
 		clk = ~clk;

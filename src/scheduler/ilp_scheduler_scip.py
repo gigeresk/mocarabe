@@ -327,35 +327,6 @@ def schedule(self, device, dataflow_mode, netlist, io_pes, boundingBoxEnabled, f
                                 h[x, y, c, p, t] for p in range(P)) <= 1)
                             m.addCons(scip.quicksum(
                                 v[x, y, c, p, t] for p in range(P)) <= 1)
-    elif (T == 1):
-        if (tuple((x, y)) in io_pes):
-            m.addCons(scip.quicksum(enterc[x, y, p, t] for p in range(
-                P) for t in [0]) <= IO_O)  # enter noc = IO_O
-            for c in range(0, C):
-                m.addCons(scip.quicksum(enter[x, y, c, p, t] for p in range(
-                    P) for t in [0]) <= 1)  # enter noc IO_O
-        # If we're not an IO PE, can leave one at a time
-        else:
-            m.addCons(scip.quicksum(enterc[x, y, p, t] for p in range(
-                P) for t in [0]) <= 1)  # enter noc = IO_O
-            for c in range(0, C):
-                m.addCons(scip.quicksum(enter[x, y, c, p, t] for p in range(
-                    P) for t in [0]) <= 1)  # enter noc IO_O
-
-        m.addCons(scip.quicksum(exitc[x, y, p, t] for p in range(
-            P) for t in [0]) <= IO_I)  # exit_ noc = IO_I
-        for c in range(0, C):
-            # m.addCons(scip.quicksum(enter[x,y,c,p,t] for p in range(P) for t in ii_range ) <= IO_O) #enter noc IO_O
-            m.addCons(scip.quicksum(exit_[x, y, c, p, t] for p in range(
-                P) for t in [0]) <= 1)  # exit_ noc IO_I
-            m.addCons(scip.quicksum(h[x, y, c, p, t]
-                      for p in range(P) for t in [0]) <= 1)
-            m.addCons(scip.quicksum(v[x, y, c, p, t]
-                      for p in range(P) for t in [0]) <= 1)
-        print('do this rn')
-
-        # TODO
-
     # Add constraints: if multiple paths start at same source, but leave at
     # different times, must ensure that they don't do so at the same time?
     # if they do, its essentially fanout. Order enforcement between departures?
@@ -464,28 +435,34 @@ def schedule(self, device, dataflow_mode, netlist, io_pes, boundingBoxEnabled, f
                         m.addCons(enter[x, y, c, p, t] <= enterc[x, y, p, t])
                         m.addCons(exit_[x, y, c, p, t] <= exitc[x, y, p, t])
 
-    # Set objective
+    # Set objective: minimize hops, and heavily penalize exits on channels
+    # >= IO_I (those are not connected to pe_mux_2_input in hardware)
     m.setObjective(scip.quicksum(h[x, y, c, p, t] + v[x, y, c, p, t]
                                  for x in range(0, Nx)
                                  for y in range(0, Ny)
                                  for c in range(0, C)
                                  for p in range(0, P)
-                                 for t in range(0, T)), sense='minimize')
+                                 for t in range(0, T))
+                   + 1000 * scip.quicksum(exit_[x, y, c, p, t]
+                                          for x in range(0, Nx)
+                                          for y in range(0, Ny)
+                                          for c in range(IO_I, C)
+                                          for p in range(0, P)
+                                          for t in range(0, T)),
+                   sense='minimize')
 
     # solve
     t1 = time.time()
     # m.write('debug.mps')
-    # m.write('debug.lp')
+    # m.writeLP('debug.lp')
     m.optimize()
+    if m.getNSols() == 0:
+        raise RuntimeError(f"SCIP found no feasible solution (status: {m.getStatus()})")
+    sol = m.getBestSol()
 
     num_vars = 10  # m.NumVars
     num_constrs = 10  # m.NumConstrs
 
-    # status = m.Status
-    # if status != 2 and status != 10:
-    #     del m #garbage collect
-
-    # assert( status == 2 or status == 10), "Could not find a feasible solution with these parameters"
     print("Found a feasible solution!")
     VERBOSE = False
     t2 = time.time()
@@ -513,37 +490,37 @@ def schedule(self, device, dataflow_mode, netlist, io_pes, boundingBoxEnabled, f
                 for t in range(0, T):
                     for c in range(0, C):
                         enterLine = 'enter[%d][%d][%d][%d][%d] = %d' % (
-                            x, y, c, p, t, m.getVal(enter[x, y, c, p, t]))
+                            x, y, c, p, t, m.getSolVal(sol, enter[x, y, c, p, t]))
 
-                        if m.getVal(enter[x, y, c, p, t]) == 1.0:  # none == 0
+                        if m.getSolVal(sol, enter[x, y, c, p, t]) == 1.0:  # none == 0
                             # import pdb; pdb.set_trace()
                             solFile.write(enterLine + '\n')
-                            if (m.getVal(enter[x, y, c, p, t]) == 1.0):
+                            if (m.getSolVal(sol, enter[x, y, c, p, t]) == 1.0):
                                 scheduled_net.enter_noc = resource_graph.pe_out_switch[(
                                     x, y, c, t)]
 
                         exitLine = 'exit[%d][%d][%d][%d][%d] = %d' % (
-                            x, y, c, p, t, m.getVal(exit_[x, y, c, p, t]))
-                        if m.getVal(exit_[x, y, c, p, t]) == 1.0:
+                            x, y, c, p, t, m.getSolVal(sol, exit_[x, y, c, p, t]))
+                        if m.getSolVal(sol, exit_[x, y, c, p, t]) == 1.0:
                             # import pdb; pdb.set_trace()
                             solFile.write(exitLine + '\n')
-                            if m.getVal(exit_[x, y, c, p, t]) == 1.0:
+                            if m.getSolVal(sol, exit_[x, y, c, p, t]) == 1.0:
                                 scheduled_net.exit_noc.append(
                                     resource_graph.pe_in_switch[(x, y, c, t)])
 
                         hLine = 'h[%d][%d][%d][%d][%d] = %d' % (
-                            x, y, c, p, t, m.getVal(h[x, y, c, p, t]))
-                        if m.getVal(h[x, y, c, p, t]) == 1.0:
+                            x, y, c, p, t, m.getSolVal(sol, h[x, y, c, p, t]))
+                        if m.getSolVal(sol, h[x, y, c, p, t]) == 1.0:
                             solFile.write(hLine + '\n')
-                            if m.getVal(h[x, y, c, p, t]) == 1.0:
+                            if m.getSolVal(sol, h[x, y, c, p, t]) == 1.0:
                                 scheduled_net.noc_hops.append(
                                     resource_graph.h_noc[(x, y, c, t)])
 
                         vLine = 'v[%d][%d][%d][%d][%d] = %d' % (
-                            x, y, c, p, t, m.getVal(v[x, y, c, p, t]))
-                        if m.getVal(v[x, y, c, p, t]) == 1.0:
+                            x, y, c, p, t, m.getSolVal(sol, v[x, y, c, p, t]))
+                        if m.getSolVal(sol, v[x, y, c, p, t]) == 1.0:
                             solFile.write(vLine + '\n')
-                            if m.getVal(v[x, y, c, p, t]) == 1.0:
+                            if m.getSolVal(sol, v[x, y, c, p, t]) == 1.0:
                                 scheduled_net.noc_hops.append(
                                     resource_graph.v_noc[(x, y, c, t)])
         scheduled_netlist.append(scheduled_net)

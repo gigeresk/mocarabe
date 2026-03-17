@@ -230,7 +230,7 @@ if sched_method == 'ILP':
         Sim.print_vivado_sim_cmd(file_helper)
         Sim.print_iverilog_sim_cmd(file_helper)
 
-        print("For a visualization of the schedule:")
+        print("\nFor a visualization of the schedule:\n")
         print("python3 src/torus_gui_freeze.py --proj {} --zoom 5".format(file_helper.proj_dir))
         print("\n")
 

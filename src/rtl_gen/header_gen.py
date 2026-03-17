@@ -14,7 +14,7 @@ def verilog_header_gen(rtl_dir, device, pe_operators):
     result += f"`define BENCHMARK_CHAN_WIDTH {device.physical_channels}\n"
     result += f"`define BENCHMARK_DATA_WIDTH 32\n"
     result += f"`define FIFO_DEPTH 64\n"  # should make variable
-    result += f"`define TORUS_SWITCH_PIPE_NUM  {device.noc_pipelining_stages}\n"
+    result += f"`define TORUS_SWITCH_PIPE_NUM  {int(device.noc_pipelining_stages) - 1}\n"
     result += f"`define PE_PIPE_NUM {device.pe_pipelining_stages}"
     result += f'''//adder and u=multiplier configuration
     //must be modified for each configuration, with a bit for each pe. 0 is for an adder, and 1 is for a multiplier.the config bits are input from right to left, with the lsb being the

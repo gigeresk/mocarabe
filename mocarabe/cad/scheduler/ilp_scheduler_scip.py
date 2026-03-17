@@ -1,6 +1,7 @@
 import ast
 import time
 import numpy as np
+from itertools import product
 
 import pyscipopt as scip
 
@@ -89,32 +90,28 @@ def schedule(
     exitc = {}
 
     # Create variables
-    for i in range(Nx):
-        for j in range(Ny):
-            for c in range(C):
-                for p in range(P):
-                    for t in range(T):
-                        h[i, j, c, p, t] = m.addVar(
-                            vtype="B", name=f"h_{i}_{j}_{c}_{p}_{t}"
-                        )
-                        v[i, j, c, p, t] = m.addVar(
-                            vtype="B", name=f"v_{i}_{j}_{c}_{p}_{t}"
-                        )
-                        enter[i, j, c, p, t] = m.addVar(
-                            vtype="B", name=f"enter_{i}_{j}_{c}_{p}_{t}"
-                        )
-                        exit_[i, j, c, p, t] = m.addVar(
-                            vtype="B", name=f"exit_{i}_{j}_{c}_{p}_{t}"
-                        )
+    for i, j, c, p, t in product(range(Nx), range(Ny), range(C), range(P), range(T)):
+        h[i, j, c, p, t] = m.addVar(
+            vtype="B", name=f"h_{i}_{j}_{c}_{p}_{t}"
+        )
+        v[i, j, c, p, t] = m.addVar(
+            vtype="B", name=f"v_{i}_{j}_{c}_{p}_{t}"
+        )
+        enter[i, j, c, p, t] = m.addVar(
+            vtype="B", name=f"enter_{i}_{j}_{c}_{p}_{t}"
+        )
+        exit_[i, j, c, p, t] = m.addVar(
+            vtype="B", name=f"exit_{i}_{j}_{c}_{p}_{t}"
+        )
 
-            for p in range(P):
-                for t in range(T):
-                    enterc[i, j, p, t] = m.addVar(
-                        vtype="B", name=f"enterc_{i}_{j}_{p}_{t}"
-                    )
-                    exitc[i, j, p, t] = m.addVar(
-                        vtype="B", name=f"exitc_{i}_{j}_{p}_{t}"
-                    )
+        for p in range(P):
+            for t in range(T):
+                enterc[i, j, p, t] = m.addVar(
+                    vtype="B", name=f"enterc_{i}_{j}_{p}_{t}"
+                )
+                exitc[i, j, p, t] = m.addVar(
+                    vtype="B", name=f"exitc_{i}_{j}_{p}_{t}"
+                )
     # h = m.addVars(Nx, Ny, C, P, T, vtype=GRB.BINARY, name='h')
     # v = m.addVars(Nx, Ny, C, P, T, vtype=GRB.BINARY, name='v')
     # enter = m.addVars(Nx, Ny, C, P, T, vtype=GRB.BINARY, name='enter')
@@ -396,159 +393,139 @@ def schedule(
     # if they do, its essentially fanout. Order enforcement between departures?
 
     if T > 1:
-        for x in range(0, Nx):
-            for y in range(0, Ny):
-                for c in range(0, C):
-                    for p in range(0, P):
-                        for t in range(0, T):
-                            # what leaves must have entered
-                            # you can leave more than once (fanout)
-                            m.addCons(
-                                h[(x + 1) % Nx, y, c, p, (t + NOC_PIPE + 1) % T]
-                                <= h[x, y, c, p, t]
-                                + v[x, y, c, p, t]
-                                + enter[x, y, c, p, t]
-                            )
-                            m.addCons(
-                                v[x, (y + 1) % Ny, c, p, (t + NOC_PIPE + 1) % T]
-                                <= h[x, y, c, p, t]
-                                + v[x, y, c, p, t]
-                                + enter[x, y, c, p, t]
-                            )
-                            m.addCons(
-                                exit_[x, y, c, p, (t + NOC_PIPE + 1) % T]
-                                <= h[x, y, c, p, t]
-                                + v[x, y, c, p, t]
-                                + enter[x, y, c, p, t]
-                            )
-                            m.addCons(
-                                h[x, y, c, p, t]
-                                + v[x, y, c, p, t]
-                                + enter[x, y, c, p, t]
-                                <= h[(x + 1) % Nx, y, c, p, (t + NOC_PIPE + 1) % T]
-                                + v[x, (y + 1) % Ny, c, p, (t + NOC_PIPE + 1) % T]
-                                + exit_[x, y, c, p, (t + NOC_PIPE + 1) % T]
-                            )
+        for x, y, c, p, t in product(range(Nx), range(Ny), range(C), range(P), range(T)):
+            # what leaves must have entered
+            # you can leave more than once (fanout)
+            m.addCons(
+                h[(x + 1) % Nx, y, c, p, (t + NOC_PIPE + 1) % T]
+                <= h[x, y, c, p, t]
+                + v[x, y, c, p, t]
+                + enter[x, y, c, p, t]
+            )
+            m.addCons(
+                v[x, (y + 1) % Ny, c, p, (t + NOC_PIPE + 1) % T]
+                <= h[x, y, c, p, t]
+                + v[x, y, c, p, t]
+                + enter[x, y, c, p, t]
+            )
+            m.addCons(
+                exit_[x, y, c, p, (t + NOC_PIPE + 1) % T]
+                <= h[x, y, c, p, t]
+                + v[x, y, c, p, t]
+                + enter[x, y, c, p, t]
+            )
+            m.addCons(
+                h[x, y, c, p, t]
+                + v[x, y, c, p, t]
+                + enter[x, y, c, p, t]
+                <= h[(x + 1) % Nx, y, c, p, (t + NOC_PIPE + 1) % T]
+                + v[x, (y + 1) % Ny, c, p, (t + NOC_PIPE + 1) % T]
+                + exit_[x, y, c, p, (t + NOC_PIPE + 1) % T]
+            )
 
     elif T == 1:
-        for x in range(0, Nx):
-            for y in range(0, Ny):
-                for c in range(0, C):
-                    for p in range(0, P):
-                        # what leaves must have entered
-                        # you can leave more than once (fanout)
-                        m.addCons(
-                            h[(x + 1) % Nx, y, c, p, 0]
-                            <= h[x, y, c, p, 0]
-                            + v[x, y, c, p, 0]
-                            + enter[x, y, c, p, 0]
-                        )
-                        m.addCons(
-                            v[x, (y + 1) % Ny, c, p, 0]
-                            <= h[x, y, c, p, 0]
-                            + v[x, y, c, p, 0]
-                            + enter[x, y, c, p, 0]
-                        )
-                        m.addCons(
-                            exit_[x, y, c, p, 0]
-                            <= h[x, y, c, p, 0]
-                            + v[x, y, c, p, 0]
-                            + enter[x, y, c, p, 0]
-                        )
-                        m.addCons(
-                            h[x, y, c, p, 0] + v[x, y, c, p, 0] + enter[x, y, c, p, 0]
-                            <= h[(x + 1) % Nx, y, c, p, 0]
-                            + v[x, (y + 1) % Ny, c, p, 0]
-                            + exit_[x, y, c, p, 0]
-                        )
+        for x, y, c, p in product(range(Nx), range(Ny), range(C), range(P)):
+            # what leaves must have entered
+            # you can leave more than once (fanout)
+            m.addCons(
+                h[(x + 1) % Nx, y, c, p, 0]
+                <= h[x, y, c, p, 0]
+                + v[x, y, c, p, 0]
+                + enter[x, y, c, p, 0]
+            )
+            m.addCons(
+                v[x, (y + 1) % Ny, c, p, 0]
+                <= h[x, y, c, p, 0]
+                + v[x, y, c, p, 0]
+                + enter[x, y, c, p, 0]
+            )
+            m.addCons(
+                exit_[x, y, c, p, 0]
+                <= h[x, y, c, p, 0]
+                + v[x, y, c, p, 0]
+                + enter[x, y, c, p, 0]
+            )
+            m.addCons(
+                h[x, y, c, p, 0] + v[x, y, c, p, 0] + enter[x, y, c, p, 0]
+                <= h[(x + 1) % Nx, y, c, p, 0]
+                + v[x, (y + 1) % Ny, c, p, 0]
+                + exit_[x, y, c, p, 0]
+            )
 
     if noNocInitialAndFinal and T > 1:
         # Originally we removed this, but it actualy helps if we throw out
         # the whole "T=II" approach, where T isn't just the upper bound but is the actual guaranteed schedule length.
 
         # regardless of IO_I or IO_O, only one path can hop onto a channel at x,y in a given cycle.
-        for x in range(0, Nx):
-            for y in range(0, Ny):
-                for c in range(0, C):
-                    for p in range(0, P):
-                        # Do not use horizontal and vertical resources in cycle 0
-                        m.addCons(h[x, y, c, p, 0] == 0)
-                        m.addCons(v[x, y, c, p, 0] == 0)
-                        # pretty sure below isn't necessary, since we are forced to exit_ already
-                        # i will check though
-                        # Do not use horizontal and vertical resources in the final cycle
-                        # m.addCons(h[x,y,c,p,T-1] == 0)
-                        # m.addCons(v[x,y,c,p,T-1] == 0)
+        for x, y, c, p in product(range(Nx), range(Ny), range(C), range(P)):
+            # Do not use horizontal and vertical resources in cycle 0
+            m.addCons(h[x, y, c, p, 0] == 0)
+            m.addCons(v[x, y, c, p, 0] == 0)
+            # pretty sure below isn't necessary, since we are forced to exit_ already
+            # i will check though
+            # Do not use horizontal and vertical resources in the final cycle
+            # m.addCons(h[x,y,c,p,T-1] == 0)
+            # m.addCons(v[x,y,c,p,T-1] == 0)
 
     if P > 1:
         if T > 1:
             # for individual channel resources, can't use more than once a cycle
-            for x in range(0, Nx):
-                for y in range(0, Ny):
-                    for c in range(0, C):
-                        for t in range(0, T):
-                            m.addCons(
-                                scip.quicksum(h[x, y, c, p, t] for p in range(0, P))
-                                <= 1
-                            )
-                            m.addCons(
-                                scip.quicksum(v[x, y, c, p, t] for p in range(0, P))
-                                <= 1
-                            )
-                            # I don't think this is necessary?
-                            # m.addCons(scip.quicksum(enter[x,y,c,p,t] for p in range(0,P))<=1)
-                            # m.addCons(scip.quicksum(exit_[x,y,c,p,t] for p in range(0,P))<=1)
+            for x, y, c, t in product(range(Nx), range(Ny), range(C), range(T)):
+                m.addCons(
+                    scip.quicksum(h[x, y, c, p, t] for p in range(0, P))
+                    <= 1
+                )
+                m.addCons(
+                    scip.quicksum(v[x, y, c, p, t] for p in range(0, P))
+                    <= 1
+                )
+                # I don't think this is necessary?
+                # m.addCons(scip.quicksum(enter[x,y,c,p,t] for p in range(0,P))<=1)
+                # m.addCons(scip.quicksum(exit_[x,y,c,p,t] for p in range(0,P))<=1)
         elif T == 1:
-            for x in range(0, Nx):
-                for y in range(0, Ny):
-                    for c in range(0, C):
-                        m.addCons(
-                            scip.quicksum(h[x, y, c, p, 0] for p in range(0, P)) <= 1
-                        )
-                        m.addCons(
-                            scip.quicksum(v[x, y, c, p, 0] for p in range(0, P)) <= 1
-                        )
+            for x, y, c in product(range(Nx), range(Ny), range(C)):
+                m.addCons(
+                    scip.quicksum(h[x, y, c, p, 0] for p in range(0, P)) <= 1
+                )
+                m.addCons(
+                    scip.quicksum(v[x, y, c, p, 0] for p in range(0, P)) <= 1
+                )
 
-                        m.addCons(
-                            scip.quicksum(enter[x, y, c, p, 0] for p in range(0, P))
-                            <= 1
-                        )
-                        m.addCons(
-                            scip.quicksum(exit_[x, y, c, p, 0] for p in range(0, P))
-                            <= 1
-                        )
+                m.addCons(
+                    scip.quicksum(enter[x, y, c, p, 0] for p in range(0, P))
+                    <= 1
+                )
+                m.addCons(
+                    scip.quicksum(exit_[x, y, c, p, 0] for p in range(0, P))
+                    <= 1
+                )
 
     if T > 1:
         # regardless of IO_I or IO_O, only one path can hop onto a channel at x,y in a given cycle.
-        for x in range(0, Nx):
-            for y in range(0, Ny):
-                for t in range(0, T):
-                    if tuple((x, y)) in io_pes:
-                        m.addCons(
-                            scip.quicksum(enterc[x, y, p, t] for p in range(0, P))
-                            <= IO_O
-                        )
-                    else:
-                        m.addCons(
-                            scip.quicksum(enterc[x, y, p, t] for p in range(0, P)) <= 1
-                        )
+        for x, y, t in product(range(Nx), range(Ny), range(T)):
+            if tuple((x, y)) in io_pes:
+                m.addCons(
+                    scip.quicksum(enterc[x, y, p, t] for p in range(0, P))
+                    <= IO_O
+                )
+            else:
+                m.addCons(
+                    scip.quicksum(enterc[x, y, p, t] for p in range(0, P)) <= 1
+                )
 
     # Ensure single entry and exit_ across channels
-    for p in range(0, P):
-        for x in range(0, Nx):
-            for y in range(0, Ny):
-                for t in range(0, T):
-                    m.addCons(
-                        scip.quicksum(enter[x, y, c, p, t] for c in range(0, C))
-                        >= enterc[x, y, p, t]
-                    )
-                    m.addCons(
-                        scip.quicksum(exit_[x, y, c, p, t] for c in range(0, C))
-                        >= exitc[x, y, p, t]
-                    )
-                    for c in range(0, C):
-                        m.addCons(enter[x, y, c, p, t] <= enterc[x, y, p, t])
-                        m.addCons(exit_[x, y, c, p, t] <= exitc[x, y, p, t])
+    for p, x, y, t in product(range(P), range(Nx), range(Ny), range(T)):
+        m.addCons(
+            scip.quicksum(enter[x, y, c, p, t] for c in range(0, C))
+            >= enterc[x, y, p, t]
+        )
+        m.addCons(
+            scip.quicksum(exit_[x, y, c, p, t] for c in range(0, C))
+            >= exitc[x, y, p, t]
+        )
+        for c in range(0, C):
+            m.addCons(enter[x, y, c, p, t] <= enterc[x, y, p, t])
+            m.addCons(exit_[x, y, c, p, t] <= exitc[x, y, p, t])
 
     # Set objective: minimize hops, and heavily penalize exits on channels
     # >= IO_I (those are not connected to pe_mux_2_input in hardware)
@@ -608,72 +585,69 @@ def schedule(
     scheduled_netlist = ScheduledNetlist(resource_graph)
     for p in range(0, P):
         scheduled_net = ScheduledNet()
-        for x in range(0, Nx):
-            for y in range(0, Ny):
-                for t in range(0, T):
-                    for c in range(0, C):
-                        enterLine = "enter[%d][%d][%d][%d][%d] = %d" % (
-                            x,
-                            y,
-                            c,
-                            p,
-                            t,
-                            m.getSolVal(sol, enter[x, y, c, p, t]),
-                        )
+        for x, y, t, c in product(range(Nx), range(Ny), range(T), range(C)):
+            enterLine = "enter[%d][%d][%d][%d][%d] = %d" % (
+                x,
+                y,
+                c,
+                p,
+                t,
+                m.getSolVal(sol, enter[x, y, c, p, t]),
+            )
 
-                        if m.getSolVal(sol, enter[x, y, c, p, t]) == 1.0:  # none == 0
-                            # import pdb; pdb.set_trace()
-                            solFile.write(enterLine + "\n")
-                            if m.getSolVal(sol, enter[x, y, c, p, t]) == 1.0:
-                                scheduled_net.enter_noc = resource_graph.pe_out_switch[
-                                    (x, y, c, t)
-                                ]
+            if m.getSolVal(sol, enter[x, y, c, p, t]) == 1.0:  # none == 0
+                # import pdb; pdb.set_trace()
+                solFile.write(enterLine + "\n")
+                if m.getSolVal(sol, enter[x, y, c, p, t]) == 1.0:
+                    scheduled_net.enter_noc = resource_graph.pe_out_switch[
+                        (x, y, c, t)
+                    ]
 
-                        exitLine = "exit[%d][%d][%d][%d][%d] = %d" % (
-                            x,
-                            y,
-                            c,
-                            p,
-                            t,
-                            m.getSolVal(sol, exit_[x, y, c, p, t]),
-                        )
-                        if m.getSolVal(sol, exit_[x, y, c, p, t]) == 1.0:
-                            # import pdb; pdb.set_trace()
-                            solFile.write(exitLine + "\n")
-                            if m.getSolVal(sol, exit_[x, y, c, p, t]) == 1.0:
-                                scheduled_net.exit_noc.append(
-                                    resource_graph.pe_in_switch[(x, y, c, t)]
-                                )
+            exitLine = "exit[%d][%d][%d][%d][%d] = %d" % (
+                x,
+                y,
+                c,
+                p,
+                t,
+                m.getSolVal(sol, exit_[x, y, c, p, t]),
+            )
+            if m.getSolVal(sol, exit_[x, y, c, p, t]) == 1.0:
+                # import pdb; pdb.set_trace()
+                solFile.write(exitLine + "\n")
+                if m.getSolVal(sol, exit_[x, y, c, p, t]) == 1.0:
+                    scheduled_net.exit_noc.append(
+                        resource_graph.pe_in_switch[(x, y, c, t)]
+                    )
 
-                        hLine = "h[%d][%d][%d][%d][%d] = %d" % (
-                            x,
-                            y,
-                            c,
-                            p,
-                            t,
-                            m.getSolVal(sol, h[x, y, c, p, t]),
-                        )
-                        if m.getSolVal(sol, h[x, y, c, p, t]) == 1.0:
-                            solFile.write(hLine + "\n")
-                            if m.getSolVal(sol, h[x, y, c, p, t]) == 1.0:
-                                scheduled_net.noc_hops.append(
-                                    resource_graph.h_noc[(x, y, c, t)]
-                                )
+            hLine = "h[%d][%d][%d][%d][%d] = %d" % (
+                x,
+                y,
+                c,
+                p,
+                t,
+                m.getSolVal(sol, h[x, y, c, p, t]),
+            )
+            if m.getSolVal(sol, h[x, y, c, p, t]) == 1.0:
+                solFile.write(hLine + "\n")
+                if m.getSolVal(sol, h[x, y, c, p, t]) == 1.0:
+                    scheduled_net.noc_hops.append(
+                        resource_graph.h_noc[(x, y, c, t)]
+                    )
 
-                        vLine = "v[%d][%d][%d][%d][%d] = %d" % (
-                            x,
-                            y,
-                            c,
-                            p,
-                            t,
-                            m.getSolVal(sol, v[x, y, c, p, t]),
-                        )
-                        if m.getSolVal(sol, v[x, y, c, p, t]) == 1.0:
-                            solFile.write(vLine + "\n")
-                            if m.getSolVal(sol, v[x, y, c, p, t]) == 1.0:
-                                scheduled_net.noc_hops.append(
-                                    resource_graph.v_noc[(x, y, c, t)]
-                                )
+            vLine = "v[%d][%d][%d][%d][%d] = %d" % (
+                x,
+                y,
+                c,
+                p,
+                t,
+                m.getSolVal(sol, v[x, y, c, p, t]),
+            )
+            if m.getSolVal(sol, v[x, y, c, p, t]) == 1.0:
+                solFile.write(vLine + "\n")
+                if m.getSolVal(sol, v[x, y, c, p, t]) == 1.0:
+                    scheduled_net.noc_hops.append(
+                        resource_graph.v_noc[(x, y, c, t)]
+                    )
         scheduled_netlist.append(scheduled_net)
     solFile.close()
     print(f"scip ilp scheduler status: {m.getStatus()}")

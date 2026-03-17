@@ -11,8 +11,8 @@ from networkx.drawing.nx_pydot import write_dot
 from mocarabe.cad.netlist import Netlist
 from mocarabe.device import Device
 import mocarabe.pe_allocator as pe_alloc
-import mocarabe.placer as placr
-import mocarabe.scheduler as schedulr
+import mocarabe.cad.placer as placr
+import mocarabe.cad.scheduler as schedulr
 from mocarabe.rtl_gen import RTLGenerator
 from mocarabe.file_util import FilePathsHelper
 from mocarabe.resource_graph import ResourceGraph

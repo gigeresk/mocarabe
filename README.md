@@ -19,41 +19,35 @@ If you use any part of the code or data from this repository for academic work, 
 --- 
 ## Setup
 
+Most dependencies can be installed through `pip`.
 ```
-# create a virtual environment and install the requirements
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-# for visualization tools 
-sudo apt-get install python3-tk
-`# for simulation
-sudo apt install iverilog
+sudo apt install iverilog  # for sim
 ```
 
-## Running Benchmarks through Mocarabe
+## Running Designs through Mocarabe
 Example usage: `python run_mocarabe.py -dfg hgr/int_poly3 -iod 1 -ard 1 -II 1 -C 2 --place_time 0.1 --sched_method ILP`
+This will generate an architecture of appropriate size and map the given design (in this case, int_poly4) to it.
 
 ### Command line arguments
-
-- `-dfg`: path to the dataflow graph directory
-- `-II`: initiation interval: also the schedule length and the desired level of resource sharing.
-- `--log`: Log output is written to this `csv` around schedule time (lines commented ('#') when scheduling starts and when C has to be incremented, but full line taken up on final success/failure).  Look at `mocarabe/scheduler/__init__.py` for details.
-- `--tag`: A log feature: a column is taken up by this string. Useful in scripts when comparing two approaches (e.g. "PF" or "ILP", as those aren't logged (though maybe they should be))
-- `--place_time`: Annealing placement needs a time (it's not accurate, it somehow finds an iteration count based on this number and some other factor- could change this with experimentation).  For something in the order of 4x4, 0.1-0.2 is sufficient.  For the largest benchmarks, and for experiments, 1 is my go-to.
-- `--sched_method`: ILP or PF.  Default is ILP.
-- `-iod`: Diffusion factor for IO PEs
-- `-ard`: Diffusion factor for +/* PEs
-
-## Using GUI
+```
+-dfg: path to the dataflow graph directory
+-II: initiation interval: also the schedule length and the desired level of resource sharing.
+--log: Log output is written to this `csv` around schedule time (lines commented ('#') when scheduling starts and when C has to be incremented, but full line taken up on final success/failure).  Look at `mocarabe/scheduler/__init__.py` for details.
+--tag: A log feature: a column is taken up by this string. Useful in scripts when comparing two approaches (e.g. "PF" or "ILP", as those aren't logged (though maybe they should be))
+--place_time: Annealing placement needs a time (it's not accurate, it somehow finds an iteration count based on this number and some other factor- could change this with experimentation).  For something in the order of 4x4, 0.1-0.2 is sufficient.  For the largest benchmarks, and for experiments, 1 is my go-to.
+--sched_method: ILP or PF.  Default is ILP.
+-iod: Diffusion factor for IO PEs
+-ard: Diffusion factor for +/* PEs
+```
+## Using the GUI
 Running the command above generates a command in the end which you can use to visualize the system and use the GUI. A sample command would look like this:
 
 ```bash
-python3 mocarabe/torus_gui_freeze.py --proj proj/benchmark_name--time_when_benchmark_was_ran/ --zoom 5
+python3 mocarabe/torus_gui_freeze.py --proj proj/<benchmark-run>/ --zoom 5
 ```
-
-You can paste the command in your terminal to open GUI. The image below shows a sample GUI:
-
-![](pics/gui.jpg)
 
 ## RTL Architecture
 The Mocarabe architecture consists of a 2D array of building blocks connected by a directional torus network-on-chip (NoC) as shown in figure below. Each block contains both a PE to execute operations on incoming data and a set of NoC routers to control data movement.  

@@ -1,12 +1,7 @@
-# -*- coding: future_fstrings -*-
 import random
 
 from gurobipy import *
-import timeit
 from simanneal import Annealer
-
-# from placement_visualizer import visualize_placement
-import math
 
 
 def where(array, value_target):

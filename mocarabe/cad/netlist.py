@@ -41,33 +41,30 @@ class Netlist(DirectedHypergraph):
         2->0 should only be routed once, but rtl_gen should be correct
         """
 
-        dfg_file = open(path, "w+")
-
-        # first line of the file: hyperedge count, node count
-        hgr_header = "{0} {1}".format(
-            len(self.get_hyperedge_id_set()), len(self.get_node_set())
-        )
-        dfg_file.write("{0}\n".format(hgr_header))
-
-        # vertices
-        for node_id in self.node_iterator():
-            node_label = self.get_node_attribute(node_id, "label")
-            dfg_file.write(str(node_id) + ":" + str(node_label) + "\n")
-
-        dfg_file.write("--\n")
-        # hyperedges
-        for edge in self.hyperedge_id_iterator():
-            hyperedge = self.get_hyperedge_attributes(edge)
-            assert len(hyperedge["tail"]) == 1, (
-                "DFG hyperedges can only have one source ('tail' attribute)"
+        with open(path, "w+") as dfg_file:
+            # first line of the file: hyperedge count, node count
+            hgr_header = "{0} {1}".format(
+                len(self.get_hyperedge_id_set()), len(self.get_node_set())
             )
+            dfg_file.write("{0}\n".format(hgr_header))
 
-            line = hyperedge["tail"][0] + " "
-            for head in hyperedge["head"]:
-                line = line + head + " "
-            dfg_file.write("{0}\n".format(line))
+            # vertices
+            for node_id in self.node_iterator():
+                node_label = self.get_node_attribute(node_id, "label")
+                dfg_file.write(str(node_id) + ":" + str(node_label) + "\n")
 
-        dfg_file.close()
+            dfg_file.write("--\n")
+            # hyperedges
+            for edge in self.hyperedge_id_iterator():
+                hyperedge = self.get_hyperedge_attributes(edge)
+                assert len(hyperedge["tail"]) == 1, (
+                    "DFG hyperedges can only have one source ('tail' attribute)"
+                )
+
+                line = hyperedge["tail"][0] + " "
+                for head in hyperedge["head"]:
+                    line = line + head + " "
+                dfg_file.write("{0}\n".format(line))
 
     # TODO: refactor this and the init a bit...
     def deserialize_df_hypergraph(self, path: str) -> DirectedHypergraph:
@@ -271,8 +268,7 @@ class Netlist(DirectedHypergraph):
                     )
         return neighbour_depth
 
-    def to_graph(self):
-        # halp.utilities.directed_graph_transformations.to_networkx_digraph(H) #TODO
+    def to_graph(self) -> nx.DiGraph:
         P_for_node = OrderedDict()
 
         P = 0
@@ -298,11 +294,10 @@ class Netlist(DirectedHypergraph):
             P = P + 1
         return G
 
-    def to_dot(self) -> str:
+    def to_dot(self, fontname="Times-New-Roman") -> str:
         from halp.utilities.directed_graph_transformations import to_networkx_digraph
 
-        G = to_networkx_digraph(self)
-        # TODO style filled if constant or variable, not operator?
+        graph = to_networkx_digraph(self)
         palette = palettable.tableau.Tableau_20.hex_colors
 
         name = "benchmark"
@@ -311,18 +306,16 @@ class Netlist(DirectedHypergraph):
 
         node_string = ""
 
-        for node in G.nodes.data():
+        for node in graph.nodes.data():
             node_string = (
                 node_string
                 + "    "
                 + node[0]
-                + ' [label ="{0}",fontname="Times-New-Roman", fillcolor="{1}", style="filled"];\n'.format(
-                    node[1]["label"], palette[int(node[0]) % len(palette)]
-                )
+                + f' [label ="{node[1]["label"]}",fontname="{fontname}", fillcolor="{palette[int(node[0]) % len(palette)]}", style="filled"];\n'
             )
 
         edge_string = ""
-        for edge in G.edges.data():
+        for edge in graph.edges.data():
             edge_string = (
                 edge_string
                 + "    "
@@ -348,12 +341,8 @@ class Netlist(DirectedHypergraph):
     def ordered_node_id_iterator(self):
         return iter(self.ordered_node_id_list())
 
-    def is_topo_precedent(self, node_i: str, node_j: str):
-        # G = self.to_graph() # have to precompute this.
-        if nx.algorithms.has_path(self.G, node_i, node_j):
-            return True
-        else:
-            return False
+    def is_topo_precedent(self, node_i: str, node_j: str) -> bool:
+        return nx.algorithms.has_path(self.G, node_i, node_j)
 
     def get_leaf_nodes(self):
         # if a node is never a tail, then it is a leaf

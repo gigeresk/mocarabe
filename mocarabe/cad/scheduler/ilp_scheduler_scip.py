@@ -52,27 +52,24 @@ def schedule(
     T_rollover = False
 
     # read list of nets to route
-    f = open(file_name, "r")
+    with open(file_name, "r") as f:
 
-    lines = f.read().splitlines()
-    maxP = len(lines) + 1  # number of nets = number of lines in the file
-    fanout = [0] * maxP
-    src_x = dict()
-    src_y = dict()
-    for p, line in enumerate(lines):
-        line = line.partition("#")[0]  # comments
-        rawnet = ast.literal_eval(line)
-        net = np.array(rawnet)
-        fanout[p] = net.shape[0] - 1
-        if dataflow_mode == 1 and len(net.shape) > 1:
-            src_x[int(net[0][2])] = int(net[0][0])
-            src_y[int(net[0][2])] = int(net[0][1])
-        elif dataflow_mode == 1 and len(net.shape) == 1:
-            print("if this is ever true, I want to know where it comes from")
-            assert False
-            src_x[int(net[2])] = int(net[0])
-            src_y[int(net[2])] = int(net[1])
-    f.close()
+        lines = f.read().splitlines()
+        maxP = len(lines) + 1  # number of nets = number of lines in the file
+        fanout = [0] * maxP
+        src_x = dict()
+        src_y = dict()
+        for p, line in enumerate(lines):
+            line = line.partition("#")[0]  # comments
+            rawnet = ast.literal_eval(line)
+            net = np.array(rawnet)
+            fanout[p] = net.shape[0] - 1
+            if dataflow_mode == 1 and len(net.shape) > 1:
+                src_x[int(net[0][2])] = int(net[0][0])
+                src_y[int(net[0][2])] = int(net[0][1])
+            elif dataflow_mode == 1 and len(net.shape) == 1:
+                raise ValueError("if this is ever true, I want to know where it comes from")
+
     noNocInitialAndFinal = False
 
     m = scip.Model("mip-partition")

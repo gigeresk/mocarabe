@@ -35,7 +35,7 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
 
         rerun = True
         MAX_RUN_COUNT = 10
-        TIMEOUT_IN_SECONDS = sched_time + 5  # 5s grace beyond SCIP's own limit
+        TIMEOUT_IN_SECONDS = sched_time
         dataflow_mode = False
         io_pes = []
         boundingBoxEnabled = False

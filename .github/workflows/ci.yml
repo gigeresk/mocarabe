@@ -22,7 +22,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -e .
 
       - name: Run tests
         run: python -m pytest test/test_correctness.py::test_int_adder_chain_ii1 -vv

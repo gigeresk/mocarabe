@@ -31,6 +31,7 @@ dev = [
 
 [project.scripts]
 mocarabe = "mocarabe.cli:main"
+mocarabe-viz = "mocarabe.torus_gui_freeze:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

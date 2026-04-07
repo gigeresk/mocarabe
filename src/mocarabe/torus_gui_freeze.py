@@ -1045,17 +1045,11 @@ class MainApplication(tk.Frame):
         canvasvg.saveall(output_path, canvas, items=None, margin=10, tounicode=None)
 
 
-if __name__ == "__main__":
+def main():
     root = tk.Tk()
     root.title("Torus GUI")
     MainApplication(root).pack(side="top", fill="both", expand=True)
     root.mainloop()
 
-# def visualize_schedule( dataflow_hypergraph, Nx, Ny, dfg_node_to_xy, output_path, kill=True ):
-#     root = tk.Tk()
-#     root.title("Placement Visualizer")
-#     MainApplication(Nx, Ny, dataflow_hypergraph, dfg_node_to_xy, output_path, kill, root ).pack(side="top", fill="both", expand=True)
-#     if kill:
-#         root.quit()
-#     else:
-#         root.mainloop()
+if __name__ == "__main__":
+    main()

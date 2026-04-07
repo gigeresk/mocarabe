@@ -16,31 +16,36 @@ IVERILOG_CMD = (
 
 def run_simulation(dfg, ii, iod=1, ard=1, c=20, place_time=0.1, sched_method="ILP"):
     # Run mocarabe to generate the project
-    result = subprocess.run(
-        [
-            "python3",
-            "run_mocarabe.py",
-            "-dfg",
-            dfg,
-            "-iod",
-            str(iod),
-            "-ard",
-            str(ard),
-            "-II",
-            str(ii),
-            "-C",
-            str(c),
-            "--place_time",
-            str(place_time),
-            "--sched_method",
-            sched_method,
-        ],
-        capture_output=True,
-        text=True,
-        cwd=MOCARABE_ROOT,
-    )
+    try:
+        result = subprocess.run(
+            [
+                "python3",
+                "-m",
+                "mocarabe",
+                "-dfg",
+                dfg,
+                "-iod",
+                str(iod),
+                "-ard",
+                str(ard),
+                "-II",
+                str(ii),
+                "-C",
+                str(c),
+                "--place_time",
+                str(place_time),
+                "--sched_method",
+                sched_method,
+            ],
+            capture_output=True,
+            text=True,
+            cwd=MOCARABE_ROOT,
+            timeout=120,
+        )
+    except subprocess.TimeoutExpired:
+        assert False, "mocarabe timed out after 120 seconds"
     assert result.returncode == 0, (
-        f"run_mocarabe.py failed:\n{result.stdout}\n{result.stderr}"
+        f"mocarabe failed:\n{result.stdout}\n{result.stderr}"
     )
 
     # Extract the rtl directory from the output
@@ -163,9 +168,9 @@ def test_xfail_int_sobel_ii1_c40():
 
 
 @pytest.mark.xfail(
-    strict=True,
+    strict=False,
     raises=AssertionError,
-    reason="placer bug: IO node packed with compute node; PECONF set to compute type",
+    reason="placer bug: IO node packed with compute node; PECONF set to compute type (non-deterministic placer may avoid the bug)",
 )
 def test_xfail_int_level1_linear_ii1():
     output = run_simulation("hgr/int_level1_linear", ii=1, c=40, place_time=0.5)

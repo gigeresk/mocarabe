@@ -9,3 +9,6 @@ __pycache__/
 CLAUDE.md
 claude-notes.txt
 *.so
+*.egg-info/
+build/
+out/

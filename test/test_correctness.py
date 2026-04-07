@@ -19,7 +19,8 @@ def run_simulation(dfg, ii, iod=1, ard=1, c=20, place_time=0.1, sched_method="IL
     result = subprocess.run(
         [
             "python3",
-            "run_mocarabe.py",
+            "-m",
+            "mocarabe",
             "-dfg",
             dfg,
             "-iod",
@@ -40,7 +41,7 @@ def run_simulation(dfg, ii, iod=1, ard=1, c=20, place_time=0.1, sched_method="IL
         cwd=MOCARABE_ROOT,
     )
     assert result.returncode == 0, (
-        f"run_mocarabe.py failed:\n{result.stdout}\n{result.stderr}"
+        f"mocarabe failed:\n{result.stdout}\n{result.stderr}"
     )
 
     # Extract the rtl directory from the output

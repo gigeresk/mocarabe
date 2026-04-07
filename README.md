@@ -28,7 +28,7 @@ sudo apt install iverilog  # for sim
 ```
 
 ## Running Designs through Mocarabe
-Example usage: `python run_mocarabe.py -dfg hgr/int_poly3 -iod 1 -ard 1 -II 1 -C 2 --place_time 0.1 --sched_method ILP`
+Example usage: `mocarabe -dfg hgr/int_poly3 -iod 1 -ard 1 -II 1 -C 2 --place_time 0.1 --sched_method ILP`
 This will generate an architecture of appropriate size and map the given design (in this case, int_poly4) to it.
 
 ### Command line arguments

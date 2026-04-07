@@ -27,6 +27,7 @@ def schedule(
     benchmark,
     solFilename,
     file_helper,
+    sched_time=30,
 ):
     """
     provide the following: Nx,Ny,P,C,T,dataflow_mode,IO_I,II,io_pes,boundingBoxEnabled,file_name, benchmark
@@ -574,6 +575,7 @@ def schedule(
     t1 = time.time()
     # m.write('debug.mps')
     # m.writeLP('debug.lp')
+    m.setRealParam('limits/time', sched_time)
     m.optimize()
     if m.getNSols() == 0:
         raise RuntimeError(f"SCIP found no feasible solution (status: {m.getStatus()})")

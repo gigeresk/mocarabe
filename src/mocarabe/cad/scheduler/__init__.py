@@ -24,6 +24,7 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
         file_helper,
         num_partitions_given_to_operator,
         tag,
+        sched_time=30,
     ):
         if not os.path.exists("log"):
             print("Creating 'log' directory")
@@ -34,7 +35,7 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
 
         rerun = True
         MAX_RUN_COUNT = 10
-        TIMEOUT_IN_SECONDS = 1800
+        TIMEOUT_IN_SECONDS = sched_time + 5  # 5s grace beyond SCIP's own limit
         dataflow_mode = False
         io_pes = []
         boundingBoxEnabled = False
@@ -125,6 +126,7 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
                             file_helper.benchmark_name,
                             file_helper.schedule_filepath,
                             file_helper,
+                            sched_time,
                         ]
                     ),
                 )

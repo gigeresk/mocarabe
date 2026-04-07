@@ -61,6 +61,13 @@ def main():
         default=0.01,
         help="max duration for cgra placement",
     )
+    parser.add_argument(
+        "--sched_time",
+        metavar="scheduling duration (seconds)",
+        type=float,
+        default=30,
+        help="max duration for ILP scheduling (SCIP time limit in seconds)",
+    )
     # parser.add_argument('-T', metavar='schedule length', type=int, default = 0, help='schedule length (optional upper bound)')
     parser.add_argument(
         "--unroll",
@@ -89,6 +96,7 @@ def main():
     log_file = args.log
     tag = args.tag
     placement_time_delta = args.place_time
+    sched_time = args.sched_time
     schedule_length = args.II
     unroll_factor = args.unroll
     sched_method = args.sched_method
@@ -294,6 +302,7 @@ def main():
             file_helper,
             num_partitions_given_to_operator,
             tag,
+            sched_time=sched_time,
         )
 
         if scheduled_netlist != None:

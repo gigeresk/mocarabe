@@ -25,11 +25,14 @@ This is done with a custom LLVM pass which extracts the dataflow graph (DFG) fro
 The DFG is extracted in a hypergraph format (one edge can fan out to multiple nodes)
 ### Building and Running the LLVM pass
 1. Build the plugin (once):
+```
 make -C llvm_pass
+```
 
 2. Extract a DFG from a C file:
+```
 ./llvm-with-clang.sh <benchmark_file.c> hgr/
-
+```
 For example,
 ```
 # int_adder_chain.c
@@ -39,12 +42,16 @@ int int_adder_chain(int x, int y, int z, int a, int* ret) {
 }
 ```
 Can be synthesized with
+```
 ./llvm-with-clang.sh int_adder_chain.c hgr/
-
+```
 ###
 
 ## Running Designs through Mocarabe
-Example usage: `mocarabe -dfg hgr/int_adder_chain -iod 1 -ard 1 -II 1 -C 2 --place_time 0.1 --sched_method ILP`
+Example usage: 
+```
+mocarabe -dfg hgr/int_adder_chain -iod 1 -ard 1 -II 1 -C 2 --place_time 0.1 --sched_method ILP
+```
 This will generate an architecture of appropriate size and map the given design (in this case, int_poly4) to it.
 
 ### Command line arguments
@@ -65,21 +72,21 @@ mocarabe-viz --proj <benchmark-run-dir>/
 ```
 
 ## RTL Architecture
-The Mocarabe architecture consists of a 2D array of building blocks connected by a directional torus network-on-chip (NoC) as shown in figure below. Each block contains both a PE to execute operations on incoming data and a set of NoC routers to control data movement.  
- - A PE can be configured as either an operator (multiply or add) or a data input/output. Multipliers and adders are the currently supported operator types.PEs store incoming operands in shift registers and select the relevant stored operands as inputs to their ALU at each cycle, as shown in figfure below. Operand selection at each cycle is extracted from the compiler output.
+The architecture consists of a 2D array of building blocks connected by a directional torus network-on-chip (NoC) as shown in figure below. Each block contains both a PE to execute operations on incoming data and a set of NoC routers to control data movement.  
+A PE can be configured as either an operator (multiply or add) or a data input/output. Multipliers and adders are the currently supported operator types. PEs store incoming operands in shift registers and select the relevant stored operands as inputs to their ALU at each cycle, as shown in figure below. Operand selection at each cycle is extracted from the compiler output.
 
- ![](paper/pics/PE.png)
+![](paper/pics/PE.png)
 
- - A key feature of our architecture is the variable number of parallel physical communication channels Every router accepts inputs from the local PE and the south and west neighbors on the same channel and sends outputs north, east, and to the local PE. A single-channel router is shown in figure below.
+A key feature of the architecture is the variable number of parallel physical communication channels. Every router point accepts inputs from the local PE, the south, and the west neighbors on the same channel and sends outputs north, east, and to the local PE. A single-channel router point is shown in figure below.
 
-  ![](paper/pics/router.png)
+![](paper/pics/router.png)
 
-The entire architecture is designed for statically-scheduled, time-multiplexed operation. With an initiation interval or (con-ext count) II, every routing and functional resource will repeat  the  same  task, accept inputs, and drive outputs in a repeating  phase  of II cycles. II is thus also  the  number ofoperations mapped to a resource which can enable larger appli-cations to be mapped to fewer blocks at the cost of more LUTsto drive multiplexer select lines (context memories labeled "CTX" in figures above). II is the number of cycles in the modulo schedule found by the compiler. Operation execution and data movement are statically scheduled and encoded  as multiplexer select line memories. An application can be  mapped over a subset of all available PEs and unrolled (repeated) by tiling over the full array. If the number of communication channels is greater than one, PE inputs are fanned in from each channel to both shift registers. The figure below shows an M x N array with 3 communication channels and two input PEs.
+The entire architecture is designed for statically-scheduled, time-multiplexed operation. With an initiation interval II (which can also be though of as context count), every routing and functional resource will repeat the same task, accept inputs, and drive outputs in a repeating phase of II cycles. II is thus also the number of operations mapped to a resource which can enable larger applications to be mapped to fewer blocks at the cost of more LUTs to drive multiplexer select lines (context memories labeled "CTX" in figures above). II is the number of cycles in the modulo schedule found by the compiler. Operation execution and data movement are statically scheduled and encoded as multiplexer select line memories. An application can be mapped over a subset of all available PEs and unrolled (repeated) by tiling over the full array. If the number of communication channels is greater than one, PE inputs are fanned in from each channel to both shift registers. The figure below shows an M x N array with 3 communication channels and two input PEs.
 
-![](pics/NoCdiagram.png)
+![](paper/pics/NoCdiagram.png)
 
 
-For details about the Vivado implementation on Alveo U280, see [vivado.md](export/vivado.md) (archived).
+For details about the (archived) Vivado implementation on Alveo U280, see [vivado.md](export/vivado.md).
 
 ### How to Cite
 

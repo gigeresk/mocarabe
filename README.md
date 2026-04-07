@@ -45,14 +45,13 @@ Can be synthesized with
 ```
 ./llvm-with-clang.sh int_adder_chain.c hgr/
 ```
-###
 
 ## Running Designs through Mocarabe
 Example usage: 
 ```
-mocarabe -dfg hgr/int_adder_chain -iod 1 -ard 1 -II 1 -C 2 --place_time 0.1 --sched_method ILP
+mocarabe -dfg hgr/int_adder_chain -iod 1 -ard 1 -II 1 -C 20 --place_time 0.1 --sched_method ILP
 ```
-This will generate an architecture of appropriate size and map the given design (in this case, int_poly4) to it.
+This will generate an architecture of appropriate size and map the given design (in this case, int_adder_chain) to it.
 
 ### Command line arguments
 ```
@@ -61,8 +60,8 @@ This will generate an architecture of appropriate size and map the given design 
 --log: Log output is written to this `csv` around schedule time (lines commented ('#') when scheduling starts and when C has to be incremented, but full line taken up on final success/failure).  Look at `mocarabe/scheduler/__init__.py` for details.
 --place_time: Annealing placement needs a time (it's not accurate, it somehow finds an iteration count based on this number and some other factor- could change this with experimentation).  For something in the order of 4x4, 0.1-0.2 is sufficient.  For the largest benchmarks, and for experiments, 1 is my go-to.
 --sched_method: 'ILP' (integer linear programming) or 'PF' (pathfinder).  Default is 'ILP'.
--iod: Diffusion factor for IO PEs
--ard: Diffusion factor for +/* PEs
+-iod: Packing diffusion for IO PEs (controls how densely IO nodes are packed)
+-ard: Packing diffusion for +/* PEs (controls how densely compute nodes are packed)
 ```
 ## Using the GUI
 Running the command above will emit a project directory path. The visualization GUI can be used to visualize the generated architecture and how the benchmark was mapped.
@@ -77,7 +76,7 @@ A PE can be configured as either an operator (multiply or add) or a data input/o
 
 ![](paper/pics/PE.png)
 
-A key feature of the architecture is the variable number of parallel physical communication channels. Every router point accepts inputs from the local PE, the south, and the west neighbors on the same channel and sends outputs north, east, and to the local PE. A single-channel router point is shown in figure below.
+A key feature of the architecture is the variable number of parallel physical communication channels. Every router point accepts inputs from the local PE, the south, and the west neighbors on the same channel and sends outputs north, east, and to the local PE (with wrap-around links completing the toroidal topology). A single-channel router point is shown in figure below.
 
 ![](paper/pics/router.png)
 

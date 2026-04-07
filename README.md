@@ -1,11 +1,13 @@
 This repository contains code and or supplementary materials related to [**Mocarabe: High-Performance Time-Multiplexed Overlays for FPGAs**](https://ieeexplore.ieee.org/document/9444076)
 
 # Mocarabe
-TODO explain high-level
+Mocarabe is a CGRA (Coarse-Grained Reconfigurable Array) architecture generator and a fully-custom EDA (electronic design automation) toolchain. It takes a dataflow graph (DFG) compiled from a C kernel, packs and places nodes on processing elements, schedules computation onto a 2-D torus network-on-chip using integer linear programming (ILP) or a  temporal-spatial PathFinder router, and generates synthesizable SystemVerilog RTL with a accompanying simulation artifacts. The Python toolchain handles scheduling, placement, and RTL generation. The hardware consists of pipelined PEs (supporting add, multiply, and IO operations) connected via a torus NoC with configurable channel widths.
+
+The export targets are simulation with Icarus Verilog and implementation with Xilinx FPGAs.
 
 ## Flow
 
-TODO diagram
+<img src="docs/architecture.svg" width="500" alt="Mocarabe architecture and EDA toolchain flow">
 
 --- 
 ## Setup
@@ -18,16 +20,31 @@ sudo apt install iverilog  # for simulation
 Some optional scripts use vivado. The use of Gurobi has been replaced by SCIP.
 
 ## Synthesizing Benchmarks
-Mocarabe can map arbitrary dataflow C kernels onto a coarse-grained compute architecture. For example,
+Mocarabe can map arbitrary dataflow C kernels onto a coarse-grained compute architecture.
+This is done with a custom LLVM pass which extracts the dataflow graph (DFG) from the C kernel.
+The DFG is extracted in a hypergraph format (one edge can fan out to multiple nodes)
+### Building and Running the LLVM pass
+1. Build the plugin (once):
+make -C llvm_pass
+
+2. Extract a DFG from a C file:
+./llvm-with-clang.sh <benchmark_file.c> hgr/
+
+For example,
 ```
+# int_adder_chain.c
+
 int int_adder_chain(int x, int y, int z, int a, int* ret) {
 	*ret = x+y+z+a;
 }
 ```
-Can be synthesized with <...>
+Can be synthesized with
+./llvm-with-clang.sh int_adder_chain.c hgr/
+
+###
 
 ## Running Designs through Mocarabe
-Example usage: `mocarabe -dfg hgr/int_poly3 -iod 1 -ard 1 -II 1 -C 2 --place_time 0.1 --sched_method ILP`
+Example usage: `mocarabe -dfg hgr/int_adder_chain -iod 1 -ard 1 -II 1 -C 2 --place_time 0.1 --sched_method ILP`
 This will generate an architecture of appropriate size and map the given design (in this case, int_poly4) to it.
 
 ### Command line arguments
@@ -41,10 +58,10 @@ This will generate an architecture of appropriate size and map the given design 
 -ard: Diffusion factor for +/* PEs
 ```
 ## Using the GUI
-Running the command above generates a command in the end which you can use to visualize the system and use the GUI. A sample command would look like this:
+Running the command above will emit a project directory path. The visualization GUI can be used to visualize the generated architecture and how the benchmark was mapped.
 
 ```bash
-mocarabe-viz --proj proj/<benchmark-run>/ --zoom 5
+mocarabe-viz --proj <benchmark-run-dir>/
 ```
 
 ## RTL Architecture

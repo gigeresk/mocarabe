@@ -34,7 +34,7 @@ parser.add_argument("-sched", type=str, help="sol file for the GUI to visualize"
 parser.add_argument(
     "--zoom",
     type=int,
-    default=2,
+    default=4,
     help="magnify everything in the GUI, except for the arrows",
 )
 parser.add_argument("--net", type=str, help="Netlist for labelling operators, etc. ")

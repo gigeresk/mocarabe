@@ -1,0 +1,183 @@
+<svg viewBox="0 0 680 820" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    :root {
+      --bg: #f9f8f6;
+      --card: #ffffff;
+      --border: rgba(0,0,0,0.1);
+      --text: #1a1a18;
+      --muted: #6b6b67;
+      --purple-50: #EEEDFE; --purple-600: #534AB7; --purple-800: #3C3489;
+      --teal-50: #E1F5EE;   --teal-600: #0F6E56;   --teal-800: #085041;
+      --amber-50: #FAEEDA;  --amber-600: #854F0B;   --amber-800: #633806;
+      --gray-50: #F1EFE8;   --gray-600: #5F5E5A;    --gray-800: #444441;
+      --blue-50: #E6F1FB;   --blue-600: #185FA5;    --blue-800: #0C447C;
+      --coral-50: #FAECE7;  --coral-600: #993C1D;   --coral-800: #712B13;
+    }
+    .t  { font-family: Georgia, serif; font-size: 14px; font-weight: 400; fill: var(--text); }
+    .ts { font-family: Georgia, serif; font-size: 12px; font-weight: 400; fill: var(--muted); }
+    .th { font-family: Georgia, serif; font-size: 14px; font-weight: 600; fill: var(--text); }
+
+    .c-purple rect, .c-purple circle, .c-purple ellipse { fill: var(--purple-50); stroke: var(--purple-600); }
+    .c-purple .th { fill: var(--purple-800); }
+    .c-purple .ts { fill: var(--purple-600); }
+    .c-teal rect, .c-teal circle, .c-teal ellipse { fill: var(--teal-50); stroke: var(--teal-600); }
+    .c-teal .th { fill: var(--teal-800); }
+    .c-teal .ts { fill: var(--teal-600); }
+    .c-amber rect, .c-amber circle, .c-amber ellipse { fill: var(--amber-50); stroke: var(--amber-600); }
+    .c-amber .th { fill: var(--amber-800); }
+    .c-amber .ts { fill: var(--amber-600); }
+    .c-gray rect, .c-gray circle, .c-gray ellipse { fill: var(--gray-50); stroke: var(--gray-600); }
+    .c-gray .th { fill: var(--gray-800); }
+    .c-gray .ts { fill: var(--gray-600); }
+    .c-blue rect, .c-blue circle, .c-blue ellipse { fill: var(--blue-50); stroke: var(--blue-600); }
+    .c-blue .th { fill: var(--blue-800); }
+    .c-blue .ts { fill: var(--blue-600); }
+    .c-coral rect, .c-coral circle, .c-coral ellipse { fill: var(--coral-50); stroke: var(--coral-600); }
+    .c-coral .th { fill: var(--coral-800); }
+    .c-coral .ts { fill: var(--coral-600); }
+
+    .arr { stroke: var(--muted); stroke-width: 1; fill: none; }
+    .leader { stroke: var(--muted); stroke-width: 0.5; stroke-dasharray: 3 2; fill: none; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#6b6b67" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- INPUT -->
+  <g class="c-gray">
+    <rect x="240" y="18" width="200" height="44" rx="8" stroke-width="0.5"/>
+    <text class="th" x="340" y="35" text-anchor="middle" dominant-baseline="central">C kernel</text>
+    <text class="ts" x="340" y="52" text-anchor="middle" dominant-baseline="central">application source</text>
+  </g>
+
+  <line x1="340" y1="62" x2="340" y2="90" class="arr" marker-end="url(#arrow)"/>
+  <text class="ts" x="352" y="80" dominant-baseline="central">compile</text>
+
+  <!-- DFG -->
+  <g class="c-purple">
+    <rect x="220" y="92" width="240" height="44" rx="8" stroke-width="0.5"/>
+    <text class="th" x="340" y="109" text-anchor="middle" dominant-baseline="central">Dataflow graph (DFG)</text>
+    <text class="ts" x="340" y="126" text-anchor="middle" dominant-baseline="central">nodes, edges, dependencies</text>
+  </g>
+
+  <line x1="340" y1="136" x2="340" y2="168" class="arr" marker-end="url(#arrow)"/>
+
+  <!-- PYTHON TOOLCHAIN container -->
+  <rect x="40" y="170" width="600" height="230" rx="14" fill="none" stroke-width="1" stroke="rgba(0,0,0,0.1)" stroke-dasharray="5 4"/>
+  <text class="ts" x="58" y="190" dominant-baseline="central" font-style="italic">Python toolchain</text>
+
+  <g class="c-teal">
+    <rect x="64" y="202" width="170" height="56" rx="8" stroke-width="0.5"/>
+    <text class="th" x="149" y="222" text-anchor="middle" dominant-baseline="central">Pack &amp; place</text>
+    <text class="ts" x="149" y="241" text-anchor="middle" dominant-baseline="central">map DFG nodes → PEs</text>
+  </g>
+  <g class="c-teal">
+    <rect x="255" y="202" width="170" height="56" rx="8" stroke-width="0.5"/>
+    <text class="th" x="340" y="222" text-anchor="middle" dominant-baseline="central">Schedule</text>
+    <text class="ts" x="340" y="241" text-anchor="middle" dominant-baseline="central">ILP or PathFinder router</text>
+  </g>
+  <g class="c-teal">
+    <rect x="446" y="202" width="170" height="56" rx="8" stroke-width="0.5"/>
+    <text class="th" x="531" y="222" text-anchor="middle" dominant-baseline="central">RTL generation</text>
+    <text class="ts" x="531" y="241" text-anchor="middle" dominant-baseline="central">SystemVerilog + sim artifacts</text>
+  </g>
+
+  <line x1="234" y1="230" x2="253" y2="230" class="arr" marker-end="url(#arrow)"/>
+  <line x1="425" y1="230" x2="444" y2="230" class="arr" marker-end="url(#arrow)"/>
+
+  <g class="c-purple">
+    <rect x="188" y="278" width="120" height="36" rx="6" stroke-width="0.5"/>
+    <text class="ts" x="248" y="292" text-anchor="middle" dominant-baseline="central">ILP solver</text>
+    <text class="ts" x="248" y="308" text-anchor="middle" dominant-baseline="central">optimal mapping</text>
+  </g>
+  <g class="c-purple">
+    <rect x="326" y="278" width="130" height="36" rx="6" stroke-width="0.5"/>
+    <text class="ts" x="391" y="292" text-anchor="middle" dominant-baseline="central">PathFinder</text>
+    <text class="ts" x="391" y="308" text-anchor="middle" dominant-baseline="central">temporal-spatial</text>
+  </g>
+  <line x1="248" y1="278" x2="295" y2="258" stroke="rgba(0,0,0,0.1)" stroke-width="0.5" stroke-dasharray="3 2" fill="none"/>
+  <line x1="391" y1="278" x2="370" y2="258" stroke="rgba(0,0,0,0.1)" stroke-width="0.5" stroke-dasharray="3 2" fill="none"/>
+
+  <line x1="340" y1="400" x2="340" y2="428" class="arr" marker-end="url(#arrow)"/>
+  <text class="ts" x="352" y="418" dominant-baseline="central">configure</text>
+
+  <!-- HARDWARE container -->
+  <rect x="40" y="430" width="600" height="260" rx="14" fill="none" stroke-width="1" stroke="rgba(0,0,0,0.1)" stroke-dasharray="5 4"/>
+  <text class="ts" x="58" y="450" dominant-baseline="central" font-style="italic">CGRA hardware — 2-D torus NoC</text>
+
+  <!-- PE grid row 0 -->
+  <g class="c-amber"><rect x="100" y="464" width="90" height="48" rx="6" stroke-width="0.5"/>
+    <text class="th" x="145" y="483" text-anchor="middle" dominant-baseline="central">PE</text>
+    <text class="ts" x="145" y="499" text-anchor="middle" dominant-baseline="central">add/mul/IO</text></g>
+  <g class="c-amber"><rect x="295" y="464" width="90" height="48" rx="6" stroke-width="0.5"/>
+    <text class="th" x="340" y="483" text-anchor="middle" dominant-baseline="central">PE</text>
+    <text class="ts" x="340" y="499" text-anchor="middle" dominant-baseline="central">add/mul/IO</text></g>
+  <g class="c-amber"><rect x="490" y="464" width="90" height="48" rx="6" stroke-width="0.5"/>
+    <text class="th" x="535" y="483" text-anchor="middle" dominant-baseline="central">PE</text>
+    <text class="ts" x="535" y="499" text-anchor="middle" dominant-baseline="central">add/mul/IO</text></g>
+  <!-- row 1 -->
+  <g class="c-amber"><rect x="100" y="534" width="90" height="48" rx="6" stroke-width="0.5"/>
+    <text class="th" x="145" y="553" text-anchor="middle" dominant-baseline="central">PE</text>
+    <text class="ts" x="145" y="569" text-anchor="middle" dominant-baseline="central">add/mul/IO</text></g>
+  <g class="c-amber"><rect x="295" y="534" width="90" height="48" rx="6" stroke-width="0.5"/>
+    <text class="th" x="340" y="553" text-anchor="middle" dominant-baseline="central">PE</text>
+    <text class="ts" x="340" y="569" text-anchor="middle" dominant-baseline="central">add/mul</text></g>
+  <g class="c-amber"><rect x="490" y="534" width="90" height="48" rx="6" stroke-width="0.5"/>
+    <text class="th" x="535" y="553" text-anchor="middle" dominant-baseline="central">PE</text>
+    <text class="ts" x="535" y="569" text-anchor="middle" dominant-baseline="central">add/mul/IO</text></g>
+  <!-- row 2 -->
+  <g class="c-amber"><rect x="100" y="604" width="90" height="48" rx="6" stroke-width="0.5"/>
+    <text class="th" x="145" y="623" text-anchor="middle" dominant-baseline="central">PE</text>
+    <text class="ts" x="145" y="639" text-anchor="middle" dominant-baseline="central">add/mul/IO</text></g>
+  <g class="c-amber"><rect x="295" y="604" width="90" height="48" rx="6" stroke-width="0.5"/>
+    <text class="th" x="340" y="623" text-anchor="middle" dominant-baseline="central">PE</text>
+    <text class="ts" x="340" y="639" text-anchor="middle" dominant-baseline="central">add/mul/IO</text></g>
+  <g class="c-amber"><rect x="490" y="604" width="90" height="48" rx="6" stroke-width="0.5"/>
+    <text class="th" x="535" y="623" text-anchor="middle" dominant-baseline="central">PE</text>
+    <text class="ts" x="535" y="639" text-anchor="middle" dominant-baseline="central">add/mul/IO</text></g>
+
+  <!-- horizontal channels -->
+  <line x1="190" y1="488" x2="295" y2="488" stroke="#BA7517" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+  <line x1="385" y1="488" x2="490" y2="488" stroke="#BA7517" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+  <line x1="190" y1="558" x2="295" y2="558" stroke="#BA7517" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+  <line x1="385" y1="558" x2="490" y2="558" stroke="#BA7517" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+  <line x1="190" y1="628" x2="295" y2="628" stroke="#BA7517" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+  <line x1="385" y1="628" x2="490" y2="628" stroke="#BA7517" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+  <!-- vertical channels -->
+  <line x1="145" y1="512" x2="145" y2="534" stroke="#BA7517" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+  <line x1="145" y1="582" x2="145" y2="604" stroke="#BA7517" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+  <line x1="340" y1="512" x2="340" y2="534" stroke="#BA7517" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+  <line x1="340" y1="582" x2="340" y2="604" stroke="#BA7517" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+  <line x1="535" y1="512" x2="535" y2="534" stroke="#BA7517" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+  <line x1="535" y1="582" x2="535" y2="604" stroke="#BA7517" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+  <!-- torus wrap arrows -->
+  <path d="M580 488 Q618 488 618 460 Q618 444 100 444 Q80 444 80 464 Q80 480 100 488" stroke="#BA7517" stroke-width="1" stroke-dasharray="4 3" fill="none" marker-end="url(#arrow)"/>
+  <path d="M145 652 Q145 670 120 670 Q60 670 60 488 Q60 460 100 460" stroke="#BA7517" stroke-width="1" stroke-dasharray="4 3" fill="none" marker-end="url(#arrow)"/>
+
+  <text class="ts" x="238" y="476" text-anchor="middle" dominant-baseline="central">ch. width configurable</text>
+  <text class="ts" x="630" y="556" text-anchor="start" dominant-baseline="central">pipelined</text>
+
+  <!-- RTL output -->
+  <line x1="200" y1="700" x2="160" y2="740" class="arr" marker-end="url(#arrow)"/>
+  <line x1="480" y1="700" x2="520" y2="740" class="arr" marker-end="url(#arrow)"/>
+
+  <g class="c-gray">
+    <rect x="245" y="692" width="190" height="44" rx="8" stroke-width="0.5"/>
+    <text class="th" x="340" y="709" text-anchor="middle" dominant-baseline="central">Synthesizable RTL</text>
+    <text class="ts" x="340" y="726" text-anchor="middle" dominant-baseline="central">SystemVerilog</text>
+  </g>
+
+  <!-- Export targets -->
+  <g class="c-blue">
+    <rect x="52" y="742" width="190" height="52" rx="8" stroke-width="0.5"/>
+    <text class="th" x="147" y="760" text-anchor="middle" dominant-baseline="central">Simulation</text>
+    <text class="ts" x="147" y="778" text-anchor="middle" dominant-baseline="central">Icarus Verilog</text>
+  </g>
+  <g class="c-coral">
+    <rect x="440" y="742" width="190" height="52" rx="8" stroke-width="0.5"/>
+    <text class="th" x="535" y="760" text-anchor="middle" dominant-baseline="central">Implementation</text>
+    <text class="ts" x="535" y="778" text-anchor="middle" dominant-baseline="central">Xilinx FPGA</text>
+  </g>
+</svg>

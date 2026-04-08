@@ -2,7 +2,8 @@ This repository contains code and or supplementary materials related to [**Mocar
 
 # Mocarabe
 
-[![CI](https://github.com/gigeresk/mocarabe/actions/workflows/ci.yml/badge.svg)](https://github.com/gigeresk/mocarabe/actions/workflows/ci.yml)
+[![CI](https://github.com/gigeresk/mocarabe/actions/workflows/ci.yml/badge.svg)](https://github.com/gigeresk/mocarabe/actions/workflows/ci.yml)  
+
 Mocarabe is a CGRA (Coarse-Grained Reconfigurable Array) architecture generator and a fully-custom EDA (electronic design automation) toolchain. It takes a dataflow graph (DFG) compiled from a C kernel, packs and places nodes on processing elements, schedules computation onto a 2-D torus network-on-chip using integer linear programming (ILP) or a  temporal-spatial PathFinder router, and generates synthesizable SystemVerilog RTL with a accompanying simulation artifacts. The Python toolchain handles scheduling, placement, and RTL generation. The hardware consists of pipelined PEs (supporting add, multiply, and IO operations) connected via a torus NoC with configurable channel widths.
 
 The export targets are simulation with Icarus Verilog and implementation with Xilinx FPGAs.

@@ -26,4 +26,3 @@ jobs:
 
       - name: Run tests
         run: python -m pytest test/test_correctness.py::test_int_adder_chain_ii1 -vv
-        #  run: python -m pytest test/test_correctness.py -v

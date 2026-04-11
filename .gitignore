@@ -12,3 +12,6 @@ claude-notes.txt
 *.egg-info/
 build/
 out/
+*.swp
+*_temp.txt
+rtl/rtl/*.dat

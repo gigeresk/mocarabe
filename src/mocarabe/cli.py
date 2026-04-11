@@ -148,7 +148,7 @@ def main():
     """ Environment Setup """
     dfg_dir = dfg_dir.strip("/")
     benchmark_name = os.path.basename(dfg_dir)
-    timestamp_suffix = datetime.now().strftime("--%d-%m-%y-%H.%M.%S")
+    timestamp_suffix = datetime.now().strftime("--%d-%m-%y-%H.%M.%S.%f")
     file_helper = FilePathsHelper("proj/", benchmark_name, timestamp_suffix)
     file_helper.mk_proj_subdirectories()
     file_helper.log_file = log_file

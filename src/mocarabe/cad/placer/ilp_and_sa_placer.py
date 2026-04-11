@@ -1,3 +1,5 @@
+import random
+
 from .base import PlacerStrategy
 
 from .partitioner import partition_with_ilp_scip
@@ -21,6 +23,7 @@ class IlpAndSimulatedAnnealingPlacer(PlacerStrategy):
         Ny,
         log_dir=".",
         placement_constraints="",
+        seed=0,
     ):
 
         dfg_v_to_partition_id, partitioned_op_map = partition_with_ilp_scip(
@@ -30,6 +33,7 @@ class IlpAndSimulatedAnnealingPlacer(PlacerStrategy):
             partition_filename,
             II,
             log_dir,
+            seed=seed,
         )
 
         print("\n--------------Placement--------------\n")
@@ -65,9 +69,14 @@ class IlpAndSimulatedAnnealingPlacer(PlacerStrategy):
 
         print(f"Starting energy: {placer.energy()}")
 
+        # auto() mutates self.state during its timing loop, so save state first.
+        # Restore it and re-seed before anneal() so both the starting state and
+        # the random sequence are deterministic regardless of system load.
+        state_snapshot = initial_state[:]
         placer.set_schedule(placer.auto(minutes=time))
+        placer.state = state_snapshot
         placer.copy_strategy = "slice"
-
+        random.seed(seed)
         partition_to_pe_id, total_wirelength = placer.anneal()
 
         print(f"state: {partition_to_pe_id}, final wirelength: {total_wirelength}")

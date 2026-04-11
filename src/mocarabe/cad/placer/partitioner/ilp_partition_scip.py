@@ -10,7 +10,7 @@ def partition_operator(operator_ranges, partition):
 
 
 def partition_with_ilp_scip(
-    HG, K, num_partitions_given_to_operator, partition_filename, II, log_dir="."
+    HG, K, num_partitions_given_to_operator, partition_filename, II, log_dir=".", seed=0
 ):
     """
     HYPERGRAPH PARTITIONING TECHNIQUES; D. Kucar, S. Areibi, A. Vannelli
@@ -58,6 +58,7 @@ def partition_with_ilp_scip(
         netlist.append(net)
     # Create a new model
     model = scip.Model("mip-partition")
+    model.setIntParam("randomization/randomseedshift", seed)
     # Create variables
 
     x = {}  # x(v,partition) = 1 if node v is in partition *partition*; else 0

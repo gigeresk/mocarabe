@@ -1,5 +1,6 @@
 import argparse
 import os
+import random
 from datetime import datetime
 import shutil
 import collections
@@ -87,6 +88,13 @@ def main():
 
     parser.add_argument("--noc_pipe", metavar="noc pipelining", type=float, default=2)
     parser.add_argument("--pe_pipe", metavar="pe pipelining", type=int, default=5)
+    parser.add_argument(
+        "--seed",
+        metavar="random seed",
+        type=int,
+        default=0,
+        help="seed for SA placer and SCIP solvers (default 0 = deterministic)",
+    )
 
     args = parser.parse_args()
 
@@ -102,6 +110,7 @@ def main():
     sched_method = args.sched_method
     io_diffusion = args.iod
     arith_diffusion = args.ard
+    seed = args.seed
 
     noc_pipelining_stages = args.noc_pipe
     pe_pipelining_stages = args.pe_pipe
@@ -226,6 +235,7 @@ def main():
     num_partitions_given_to_operator = collections.Counter(np.ndarray.flatten(device_map))
 
     """ Partitioning/Packing and Placement """
+    random.seed(seed)
     placement_start_time = datetime.now()
     partition_filename = (
         file_helper.partition_dir
@@ -246,6 +256,7 @@ def main():
         Nx,
         Ny,
         file_helper.log_dir,
+        seed=seed,
     )
 
     # serialize placement
@@ -303,6 +314,7 @@ def main():
             num_partitions_given_to_operator,
             tag,
             sched_time=sched_time,
+            seed=seed,
         )
 
         if scheduled_netlist != None:

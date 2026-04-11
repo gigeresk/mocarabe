@@ -28,6 +28,7 @@ def schedule(
     solFilename,
     file_helper,
     sched_time=30,
+    seed=0,
 ):
     """
     provide the following: Nx,Ny,P,C,T,dataflow_mode,IO_I,II,io_pes,boundingBoxEnabled,file_name, benchmark
@@ -74,6 +75,7 @@ def schedule(
     noNocInitialAndFinal = False
 
     m = scip.Model("mip-partition")
+    m.setIntParam("randomization/randomseedshift", seed)
     # m.Params.Threads = 6
     # m.Params.TimeLimit = 1800
     # m.Params.MipFocus = 1
@@ -578,7 +580,7 @@ def schedule(
     m.setRealParam('limits/time', sched_time)
     m.optimize()
     if m.getNSols() == 0:
-        raise RuntimeError(f"SCIP found no feasible solution (status: {m.getStatus()})")
+        raise AssertionError(f"SCIP found no feasible solution (status: {m.getStatus()})")
     sol = m.getBestSol()
 
     num_vars = 10  # m.NumVars

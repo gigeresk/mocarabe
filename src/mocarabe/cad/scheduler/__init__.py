@@ -25,6 +25,7 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
         num_partitions_given_to_operator,
         tag,
         sched_time=30,
+        seed=0,
     ):
         if not os.path.exists("log"):
             print("Creating 'log' directory")
@@ -127,6 +128,7 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
                             file_helper.schedule_filepath,
                             file_helper,
                             sched_time,
+                            seed,
                         ]
                     ),
                 )

@@ -38,3 +38,6 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
+markers = [
+    "eda: marks tests that require EDA tool.",
+]

@@ -15,7 +15,7 @@ PEs store incoming operands in shift registers and select the relevant stored op
 
 ![](paper/pics/PE.png)
 
-The architecture is designed for statically-scheduled, time-multiplexed sharing of both routing and compute resources, with a repeating context window of length *II* (for *initiation interval*). *II* is the number of cycles in the modulo schedule found by the compiler. Operation execution and data movement are statically scheduled and encoded as multiplexer select line memories. An application can be mapped over a subset of all available PEs and unrolled (repeated) by tiling over the full array. If the number of communication channels is greater than one, PE inputs are fanned in from each channel to both shift registers.
+The architecture is designed for statically-scheduled, time-multiplexed sharing of both routing and compute resources, with a repeating context window of length *II* (for *initiation interval*). *II* is the number of cycles in the modulo schedule found by the compiler.
 
 ## Toolchain
 The toolchain:
@@ -26,7 +26,7 @@ The toolchain:
 - Schedules routing and computation
 - Generates both synthesizable RTL and simulation artifacts.  
 
-Placement is done with simulated annealing and scheduling has dual strategies: an integer linear programming (ILP) formulation and a temporal-spatial PathFinder implementation.
+Placement is done with simulated annealing and scheduling has dual strategies: an integer linear programming formulation (default) and a temporal-spatial PathFinder implementation.
 
 <img src="paper/pics/flow.png" width="500" alt="Mocarabe architecture and EDA toolchain flow">
 
@@ -35,30 +35,41 @@ Placement is done with simulated annealing and scheduling has dual strategies: a
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
+
 # install icarus verilog. e.g. on Ubuntu:
 sudo apt install iverilog
-make -C llvm_pass  # build the LLVM plugin to compile C->DFG
+
+make -C llvm_pass  # build the LLVM plugin
 ```
 ### Quick example
-For example, here is a C kernel we can map.
-```
-# int_adder_chain.c
+Here is a C kernel we can map:
+```c
+// int_adder_chain.c
 
 int int_adder_chain(int x, int y, int z, int a, int* ret) {
 	*ret = x+y+z+a;
 }
 ```
-Here is how to map the kernel to a Mocarabe configuration:
-```
-# C -> dfg
+Compile to a DFG, then map and simulate:
+```bash
+# Compile C kernel to hypergraph DFG
 ./llvm-with-clang.sh int_adder_chain.c hgr/
 
-# Generate architecture and map int_adder_chain to said arch
-# II = context width/schedule length, C = channel count, iod/ard: io/arithmetic packing density
+# Map to a Mocarabe architecture
+  #   -II 1   : initiation interval (schedule length in cycles)
+  #   -C 20   : physical channels per NoC link
+  #   -iod 1  : IO-node packing density (1 IO node per PE)
+  #   -ard 1  : arithmetic-node packing density (1 op per PE)
 mocarabe -dfg hgr/int_adder_chain -II 1 -C 20 -iod 1 -ard 1
 
-# Visualization tool
-mocarabe-viz --proj <benchmark-run-dir>/
+# Visualize the placed-and-routed design
+mocarabe-viz --proj proj/int_adder_chain_*/
+
+# Simulate the generated RTL (path printed by the command above)
+cd proj/int_adder_chain_*/rtl/
+iverilog -g2012 -o sim.vvp mocarabe.sv pe_2_input.sv torus_switch.sv \
+          pe_srl.v pe_mux_2_input.sv pe_mux_3_input.sv SRL16E.v SRLC32E.v SRL64.v mocarabe_tb.sv
+vvp sim.vvp
 ```
 
 

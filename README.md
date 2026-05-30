@@ -17,7 +17,7 @@ The architecture is designed for statically-scheduled, time-multiplexed sharing 
 
 ## Toolchain
 The toolchain:
-- Compiles a C kernel into a DFG
+- Compiles a C kernel into a dataflow graph (DFG)
 - Generates a right-sized architecture by allocating PEs
 - Partitions nodes into processing elements
 - Places these PEs in the grid to minimize communication cost (wirelength)
@@ -38,10 +38,7 @@ sudo apt install iverilog
 make -C llvm_pass  # build the LLVM plugin to compile C->DFG
 ```
 ### Quick example
-```
-./llvm-with-clang.sh <benchmark_file.c> hgr/
-```
-For example,
+Here's an example benchmark:
 ```
 # int_adder_chain.c
 
@@ -49,7 +46,7 @@ int int_adder_chain(int x, int y, int z, int a, int* ret) {
 	*ret = x+y+z+a;
 }
 ```
-
+To map it to a Mocarabe configuration:
 ```
 # C -> dfg
 ./llvm-with-clang.sh int_adder_chain.c hgr/
@@ -57,6 +54,7 @@ int int_adder_chain(int x, int y, int z, int a, int* ret) {
 # Generate architecture and map int_adder_chain to said arch
 # II = context width/schedule length, C = channel count, iod/ard: io/arithmetic packing density
 mocarabe -dfg hgr/int_adder_chain -II 1 -C 20 -iod 1 -ard 1
+
 # Visualization tool
 mocarabe-viz --proj <benchmark-run-dir>/
 ```

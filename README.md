@@ -7,8 +7,10 @@ Mocarabe is a CGRA (Coarse-Grained Reconfigurable Array) architecture generator 
 To get started, jump to [Toolchain setup](#toolchain-setup).
 
 ## Architecture 
-The architecture consists of a grid of building blocks connected by a unidirectional torus network, as shown in the figure below. Each block contains a processing element (PE) to execute operations on incoming data and a set of NoC routers to control data movement.
-![](paper/pics/NoCdiagram.png)
+The architecture consists of a grid of building blocks connected by a unidirectional torus network, as shown in the figure below. Each block contains a processing element (PE) to execute operations on incoming data and a set of NoC routers to control data movement.  
+
+![](paper/pics/NoCdiagram.png)  
+
 PEs store incoming operands in shift registers and select the relevant stored operands as inputs to their ALU at each cycle, as seen below.
 
 ![](paper/pics/PE.png)
@@ -38,10 +40,7 @@ sudo apt install iverilog
 make -C llvm_pass  # build the LLVM plugin to compile C->DFG
 ```
 ### Quick example
-```
-./llvm-with-clang.sh <benchmark_file.c> hgr/
-```
-For example,
+For example, here is a C kernel we can map.
 ```
 # int_adder_chain.c
 
@@ -49,7 +48,7 @@ int int_adder_chain(int x, int y, int z, int a, int* ret) {
 	*ret = x+y+z+a;
 }
 ```
-
+Here is how to map the kernel to a Mocarabe configuration:
 ```
 # C -> dfg
 ./llvm-with-clang.sh int_adder_chain.c hgr/
@@ -57,6 +56,7 @@ int int_adder_chain(int x, int y, int z, int a, int* ret) {
 # Generate architecture and map int_adder_chain to said arch
 # II = context width/schedule length, C = channel count, iod/ard: io/arithmetic packing density
 mocarabe -dfg hgr/int_adder_chain -II 1 -C 20 -iod 1 -ard 1
+
 # Visualization tool
 mocarabe-viz --proj <benchmark-run-dir>/
 ```

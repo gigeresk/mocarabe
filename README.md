@@ -15,7 +15,7 @@ PEs store incoming operands in shift registers and select the relevant stored op
 
 ![](paper/pics/PE.png)
 
-The architecture is designed for statically-scheduled, time-multiplexed sharing of both routing and compute resources, with a repeating context window of length *II* (for *initiation interval*). *II* is the number of cycles in the modulo schedule found by the compiler.
+The architecture is designed for statically-scheduled, time-multiplexed sharing of both routing and compute resources, with a repeating context window of length *II* (for *initiation interval*). *II* is the number of cycles in the modulo schedule found by the compiler. This makes the architecture periodic in both space (toroidal topology) and time (modulo schedule).
 
 ## Toolchain
 The toolchain:

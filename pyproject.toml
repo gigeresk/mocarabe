@@ -21,6 +21,7 @@ dependencies = [
     "beautifulsoup4>=4.9",
     "pydot>=1.4.1",
     "PySCIPOpt>=6.1.0",
+    "siliconcompiler>=0.38.7",
 ]
 
 [project.optional-dependencies]

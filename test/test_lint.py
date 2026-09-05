@@ -1,4 +1,3 @@
-import fnmatch
 import os
 import subprocess
 import pytest
@@ -7,21 +6,30 @@ import pytest
 @pytest.fixture
 def plain_jane_arch() -> str:
     from src.mocarabe.cli import main
-    rtl_dir = main([
-            "-dfg", "hgr/int_adder_chain",
-            "-II", "1",
-            "-C", "20",
-            "-iod", "1",
-            "-ard", "1",
-            "--sched_method", "ILP",
-        ])
+
+    rtl_dir = main(
+        [
+            "-dfg",
+            "hgr/int_adder_chain",
+            "-II",
+            "1",
+            "-C",
+            "20",
+            "-iod",
+            "1",
+            "-ard",
+            "1",
+            "--sched_method",
+            "ILP",
+        ]
+    )
     return rtl_dir
 
 
 @pytest.mark.eda
 def test_lint(plain_jane_arch):
     verilog_files = []
-    
+
     for root, _, files in os.walk(plain_jane_arch):
         for filename in files:
             if filename.endswith((".v", ".sv")):
@@ -32,7 +40,8 @@ def test_lint(plain_jane_arch):
     cmd = [
         "slang",
         "--lint-only",
-        "-I", plain_jane_arch,
+        "-I",
+        plain_jane_arch,
         "+define+USE_SYSTEMVERILOG",
     ] + verilog_files
 

@@ -620,9 +620,9 @@ def generate_and_write_pe_memories(
             asserts_string += f'        else begin fail_count = fail_count + 1; $display("Assert error: {signal}==%0d @{cycle}, should be {expected} ({label})", {signal}); end\n'
         last_cycle = cycle
 
-    asserts_string += f"        if (fail_count == 0)\n"
+    asserts_string += "        if (fail_count == 0)\n"
     asserts_string += f'            $display("\\n=== PASS: all {assert_count} assertions passed ===");\n'
-    asserts_string += f"        else\n"
+    asserts_string += "        else\n"
     asserts_string += f'            $display("\\n=== FAIL: %0d of {assert_count} assertions failed ===", fail_count);\n'
     asserts_string += "        #10\n"
     asserts_string += "        $finish;\n"

@@ -1,8 +1,6 @@
 import sys
-import shutil
-import json
 from dataflow_hypergraph import DataflowHypergraph
-from gccutils import get_src_for_loc, cfg_to_idfg, invoke_dot
+from gccutils import cfg_to_idfg
 import gcc
 
 

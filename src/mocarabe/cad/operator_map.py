@@ -1,5 +1,3 @@
-import sys
-import math
 # print("\n\n\nTODO delete operator_map/__init__.py\n\n\n")
 
 

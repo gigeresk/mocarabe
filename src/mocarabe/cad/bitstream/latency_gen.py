@@ -174,9 +174,7 @@ def generate_unadjusted_global_timing(
         )
     """ ADJUST TIMING ON TRAVEL TIME AND PROCESSING TIME """
     # Align to modulo schedule
-    while (
-        (curr_enter_cycle) % SCHED_LEN
-    ) != tail_node_noc_enter_cycle_modulo:
+    while ((curr_enter_cycle) % SCHED_LEN) != tail_node_noc_enter_cycle_modulo:
         # import pdb; pdb.set_trace()
         # print('uh')
         curr_enter_cycle -= 1

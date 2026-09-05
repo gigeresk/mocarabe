@@ -2,7 +2,6 @@ import math
 
 import numpy as np
 
-from mocarabe.device import Device
 from .base import PEAllocatorStrategy
 
 

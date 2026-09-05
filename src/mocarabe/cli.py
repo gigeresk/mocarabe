@@ -103,7 +103,7 @@ def parse_args(argv=None):
 
 
 def main(argv=None):
-    
+
     args = parse_args(argv)
 
     dfg_dir = args.dfg
@@ -437,6 +437,7 @@ def main(argv=None):
         file_helper.write_string_to_file(verilog_header_filename, verilog_header)
 
     return file_helper.rtl_dir
+
 
 if __name__ == "__main__":
     main()

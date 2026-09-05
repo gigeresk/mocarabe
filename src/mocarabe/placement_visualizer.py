@@ -7,10 +7,8 @@ import random
 import time
 
 try:
-    import pyscreenshot as ImageGrab
-
     # might need to do sudo apt-get install python3-pil.imagetk
-    from PIL import ImageTk, Image
+    pass
 except:
     print(
         "I think you might have to do a little $sudo apt-get install python3-pil.imagetk"
@@ -162,7 +160,7 @@ class MainApplication(tk.Frame):
             canvas.create_text(
                 self.get_x1(src_pe[0]) + random.randint(0, base_offsetx),
                 self.get_y1(src_pe[1]) - random.randint(0, base_offsety),
-                font=f"Times 12",
+                font="Times 12",
                 text=dataflow_hypergraph.get_node_attribute(src, "label"),
                 fill=palette[p % len(palette)],
             )
@@ -310,7 +308,7 @@ class MainApplication(tk.Frame):
                     canvas.create_text(
                         self.get_x1(sink_pe[0]) + offset,
                         self.get_y1(sink_pe[1]) - offset,
-                        font=f"Times 12",
+                        font="Times 12",
                         fill=palette[p % len(palette)],
                         text=dataflow_hypergraph.get_node_attribute(sink, "label"),
                     )

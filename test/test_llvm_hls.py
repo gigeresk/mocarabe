@@ -7,7 +7,6 @@ by mocarabe's Netlist class.  Does not rebuild the plugin.
 
 import os
 import subprocess
-import tempfile
 
 import pytest
 
@@ -44,6 +43,7 @@ def hgr_path(out_dir, benchmark):
 # Argument validation (no plugin needed)
 # ---------------------------------------------------------------------------
 
+
 def test_no_args_exits_nonzero():
     r = subprocess.run([SCRIPT], capture_output=True, text=True, cwd=MOCARABE_ROOT)
     assert r.returncode != 0
@@ -52,7 +52,9 @@ def test_no_args_exits_nonzero():
 def test_one_arg_exits_nonzero():
     r = subprocess.run(
         [SCRIPT, os.path.join(BENCH_DIR, "int_adder_chain.c")],
-        capture_output=True, text=True, cwd=MOCARABE_ROOT,
+        capture_output=True,
+        text=True,
+        cwd=MOCARABE_ROOT,
     )
     assert r.returncode != 0
 
@@ -117,11 +119,14 @@ def test_hgr_has_io_nodes(benchmark, tmp_path):
 
 
 @requires_plugin()
-@pytest.mark.parametrize("benchmark,expected_nodes,expected_nets", [
-    ("int_adder_chain",    8,  7),
-    ("int_poly_quadratic", 9,  8),
-    ("int_dct",           77, 69),
-])
+@pytest.mark.parametrize(
+    "benchmark,expected_nodes,expected_nets",
+    [
+        ("int_adder_chain", 8, 7),
+        ("int_poly_quadratic", 9, 8),
+        ("int_dct", 77, 69),
+    ],
+)
 def test_hgr_node_net_counts(benchmark, expected_nodes, expected_nets, tmp_path):
     c_file = os.path.join(BENCH_DIR, f"{benchmark}.c")
     run_extractor(c_file, str(tmp_path))

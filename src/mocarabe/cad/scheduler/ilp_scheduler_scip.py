@@ -55,7 +55,6 @@ def schedule(
 
     # read list of nets to route
     with open(file_name, "r") as f:
-
         lines = f.read().splitlines()
         maxP = len(lines) + 1  # number of nets = number of lines in the file
         fanout = [0] * maxP
@@ -70,7 +69,9 @@ def schedule(
                 src_x[int(net[0][2])] = int(net[0][0])
                 src_y[int(net[0][2])] = int(net[0][1])
             elif dataflow_mode == 1 and len(net.shape) == 1:
-                raise ValueError("if this is ever true, I want to know where it comes from")
+                raise ValueError(
+                    "if this is ever true, I want to know where it comes from"
+                )
 
     noNocInitialAndFinal = False
 
@@ -577,10 +578,12 @@ def schedule(
     t1 = time.time()
     # m.write('debug.mps')
     # m.writeLP('debug.lp')
-    m.setRealParam('limits/time', sched_time)
+    m.setRealParam("limits/time", sched_time)
     m.optimize()
     if m.getNSols() == 0:
-        raise AssertionError(f"SCIP found no feasible solution (status: {m.getStatus()})")
+        raise AssertionError(
+            f"SCIP found no feasible solution (status: {m.getStatus()})"
+        )
     sol = m.getBestSol()
 
     num_vars = 10  # m.NumVars

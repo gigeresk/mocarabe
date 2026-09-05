@@ -3,8 +3,6 @@ import random
 import itertools
 from simanneal import Annealer
 
-from mocarabe.placement_visualizer import visualize_placement
-
 
 def initialize_state(dfg_v_to_partition_id, Nx, Ny):
 
@@ -26,8 +24,6 @@ def topographical_swap(
     type="topological",
 ):
     """No placement constraints yet"""
-
-    from networkx.algorithms.dag import topological_sort
 
     # go through every dfg node, compare.  if before, swap
 

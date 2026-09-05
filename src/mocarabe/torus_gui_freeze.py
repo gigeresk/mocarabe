@@ -9,10 +9,8 @@ import ast
 import numpy as np
 
 try:
-    import pyscreenshot as ImageGrab
-
     # might need to do sudo apt-get install python3-pil.imagetk
-    from PIL import ImageTk, Image
+    pass
 except:
     print(
         "I think you might have to do a little $sudo apt-get install python3-pil.imagetk"
@@ -997,7 +995,7 @@ class MainApplication(tk.Frame):
         canvas.create_text(
             self.get_x2(x) - 100,
             self.get_y2(y) - 20,
-            text=f"CTX 0",
+            text="CTX 0",
             font=f"Times {6 * ZOOM}",
             # fill="{}".format( color ))
         )
@@ -1006,7 +1004,7 @@ class MainApplication(tk.Frame):
             self.get_y2(y) - 20,  # - self.y_reg_table_height/2,
             # self.get_x1( x ) + self.x_reg_table_width,
             # self.get_exit_table_y2( y, t ),
-            text=f"CTX 1",
+            text="CTX 1",
             font=f"Times {6 * ZOOM}",
             # fill="{}".format( color ))
         )
@@ -1050,6 +1048,7 @@ def main():
     root.title("Torus GUI")
     MainApplication(root).pack(side="top", fill="both", expand=True)
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()

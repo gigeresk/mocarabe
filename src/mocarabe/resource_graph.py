@@ -57,7 +57,7 @@ class ResourceGraph(nx.DiGraph):
                     params=(x, y),
                     pos=(x * X_OFFSET, y * Y_OFFSET),
                     type=ResourceType.PE,
-                    label=f"PE",
+                    label="PE",
                 )
                 pe[(x, y)] = node_cnt
 
@@ -71,7 +71,7 @@ class ResourceGraph(nx.DiGraph):
                         pos=(x * X_OFFSET, y * Y_OFFSET + 1),
                         cycle=t,
                         type=ResourceType.PE_OUT,
-                        label=f"pe_out",
+                        label="pe_out",
                     )
                     pe_out[(x, y, t)] = node_cnt
                     for io_o in range(IO_O):
@@ -82,7 +82,7 @@ class ResourceGraph(nx.DiGraph):
                             pos=(x * X_OFFSET, y * Y_OFFSET + 1),
                             cycle=t,
                             type=ResourceType.PE_OUT_PORT,
-                            label=f"pe_out",
+                            label="pe_out",
                         )
                         pe_out_port[(x, y, io_o, t)] = node_cnt
                     # pe_in
@@ -95,7 +95,7 @@ class ResourceGraph(nx.DiGraph):
                         pos=(x * X_OFFSET + 1, y * Y_OFFSET),
                         cycle=t,
                         type=ResourceType.PE_IN,
-                        label=f"pe_in",
+                        label="pe_in",
                     )
                     pe_in[(x, y, t)] = node_cnt
                     for io_i in range(IO_I):
@@ -106,7 +106,7 @@ class ResourceGraph(nx.DiGraph):
                             pos=(x * X_OFFSET + 1, y * Y_OFFSET),
                             cycle=t,
                             type=ResourceType.PE_IN_PORT,
-                            label=f"pe_in",
+                            label="pe_in",
                         )
                         pe_in_port[(x, y, io_i, t)] = node_cnt
 
@@ -120,7 +120,7 @@ class ResourceGraph(nx.DiGraph):
                             pos=(x * X_OFFSET + 1, y * Y_OFFSET + 2 + c),
                             cycle=t,
                             type=ResourceType.H_NOC,
-                            label=f"h",
+                            label="h",
                         )
                         h_noc[(x, y, c, t)] = node_cnt
                         # V_NOC
@@ -131,7 +131,7 @@ class ResourceGraph(nx.DiGraph):
                             pos=(x * X_OFFSET + 2 + c, y * Y_OFFSET),
                             cycle=t,
                             type=ResourceType.V_NOC,
-                            label=f"v",
+                            label="v",
                         )
                         v_noc[(x, y, c, t)] = node_cnt
                         # SWITCH_N
@@ -142,7 +142,7 @@ class ResourceGraph(nx.DiGraph):
                             pos=(x * X_OFFSET + 2 + c, y * Y_OFFSET + 2 + c),
                             cycle=t,
                             type=ResourceType.SWITCH_N,
-                            label=f"swN",
+                            label="swN",
                         )
                         switch_n[(x, y, c, t)] = node_cnt
                         # SWITCH_E
@@ -153,7 +153,7 @@ class ResourceGraph(nx.DiGraph):
                             pos=(x * X_OFFSET + 2, y * Y_OFFSET + 1 + c),
                             cycle=t,
                             type=ResourceType.SWITCH_E,
-                            label=f"swE",
+                            label="swE",
                         )
                         switch_e[(x, y, c, t)] = node_cnt
 
@@ -165,7 +165,7 @@ class ResourceGraph(nx.DiGraph):
                             pos=(x * X_OFFSET + 1, y * Y_OFFSET + 1),
                             cycle=t,
                             type=ResourceType.PE_IN_SWITCH,
-                            label=f"swPEin",
+                            label="swPEin",
                         )
                         pe_in_switch[(x, y, c, t)] = node_cnt
 
@@ -177,7 +177,7 @@ class ResourceGraph(nx.DiGraph):
                             pos=(x * X_OFFSET + 1, y * Y_OFFSET + 1),
                             cycle=t,
                             type=ResourceType.PE_OUT_SWITCH,
-                            label=f"swPEout",
+                            label="swPEout",
                         )
                         pe_out_switch[(x, y, c, t)] = node_cnt
 

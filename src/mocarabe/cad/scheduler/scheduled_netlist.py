@@ -1,4 +1,3 @@
-from mocarabe.resource_graph import ResourceGraph
 from mocarabe.resource_type import ResourceType
 
 

@@ -22,7 +22,6 @@ def initialize_state_ok(
     # first attempt: get a topological sort, and place
     # things by growing a rectangle in the bottom right.... TODO
     # dfg_v_to_partition_id = partitioned_op_map.dfg_v_to_partition_id
-    from networkx.algorithms.dag import topological_sort
 
     # number of nodes (or could be # of IOs+ mult partitions)
     initial_state = [0] * len(dataflow_hypergraph.ordered_node_id_list())

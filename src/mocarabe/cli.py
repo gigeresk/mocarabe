@@ -21,7 +21,7 @@ from mocarabe.resource_graph import ResourceGraph
 from mocarabe.sim import Sim
 
 
-def main():
+def parse_args(argv=None):
     parser = argparse.ArgumentParser(description="Space-Time ILP Scheduler")
     parser.add_argument(
         "-dfg",
@@ -53,7 +53,11 @@ def main():
         help="log, useful for running experiments",
     )
     parser.add_argument(
-        "--tag", metavar="tag for logging", type=str, default="-", help="tag for logging"
+        "--tag",
+        metavar="tag for logging",
+        type=str,
+        default="-",
+        help="tag for logging",
     )
     parser.add_argument(
         "--place_time",
@@ -95,8 +99,12 @@ def main():
         default=0,
         help="seed for SA placer and SCIP solvers (default 0 = deterministic)",
     )
+    return parser.parse_args(argv)
 
-    args = parser.parse_args()
+
+def main(argv=None):
+    
+    args = parse_args(argv)
 
     dfg_dir = args.dfg
     II = args.II
@@ -160,7 +168,9 @@ def main():
     )
 
     print(
-        "Copying verilog files from rtl/rtl-for-sim/ to {}rtl/".format(file_helper.proj_dir)
+        "Copying verilog files from rtl/rtl-for-sim/ to {}rtl/".format(
+            file_helper.proj_dir
+        )
     )
     for rtl_file in [
         "pe_mux_2_input.sv",
@@ -232,7 +242,9 @@ def main():
     )
     print(f"Nx={Nx}, Ny={Ny}")
     print(pe_alloc.to_string(device_map))
-    num_partitions_given_to_operator = collections.Counter(np.ndarray.flatten(device_map))
+    num_partitions_given_to_operator = collections.Counter(
+        np.ndarray.flatten(device_map)
+    )
 
     """ Partitioning/Packing and Placement """
     random.seed(seed)
@@ -324,7 +336,12 @@ def main():
             print("--------------Generating Simulation RTL--------------\n")
 
             h, v, enter, exit_, T = RTLGenerator.deserialize_schedule(
-                file_helper.schedule_filepath, Nx, Ny, device.physical_channels, num_nets, T
+                file_helper.schedule_filepath,
+                Nx,
+                Ny,
+                device.physical_channels,
+                num_nets,
+                T,
             )
 
             RTLGenerator.generate_and_write_noc_mux_memories(
@@ -419,6 +436,7 @@ def main():
         verilog_header_filename = file_helper.rtl_dir + "benchmark.h"
         file_helper.write_string_to_file(verilog_header_filename, verilog_header)
 
+    return file_helper.rtl_dir
 
 if __name__ == "__main__":
     main()

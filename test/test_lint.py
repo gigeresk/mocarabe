@@ -4,29 +4,42 @@ import subprocess
 import pytest
 
 
+@pytest.fixture
+def plain_jane_arch() -> str:
+    from src.mocarabe.cli import main
+    rtl_dir = main([
+            "-dfg", "hgr/int_adder_chain",
+            "-II", "1",
+            "-C", "20",
+            "-iod", "1",
+            "-ard", "1",
+            "--sched_method", "ILP",
+        ])
+    return rtl_dir
+
+
 @pytest.mark.eda
-@pytest.mark.skip(reason="Not passing")
-def test_lint():
-    errors = 0
-
-    test_inc_dir = os.path.join(os.path.dirname(__file__), "data")
-
-    for root, dirs, files in os.walk("."):
+def test_lint(plain_jane_arch):
+    verilog_files = []
+    
+    for root, _, files in os.walk(plain_jane_arch):
         for filename in files:
-            if fnmatch.fnmatch(filename, "*.v"):
-                fullpath = os.path.join(root, filename)
-                lint_result = subprocess.run(
-                    [
-                        "slang",
-                        "--lint-only",
-                        "-I",
-                        test_inc_dir,
-                        "+define+USE_SYSTEMVERILOG",
-                        fullpath,
-                    ]
-                )
-                if lint_result.returncode != 0:
-                    print(f"Lint failed for {fullpath}")
-                    errors += 1
+            if filename.endswith((".v", ".sv")):
+                verilog_files.append(os.path.join(root, filename))
 
-    assert errors == 0, "Lint failed"
+    assert verilog_files, f"No Verilog files found in {plain_jane_arch}"
+
+    cmd = [
+        "slang",
+        "--lint-only",
+        "-I", plain_jane_arch,
+        "+define+USE_SYSTEMVERILOG",
+    ] + verilog_files
+
+    lint_result = subprocess.run(cmd, capture_output=True, text=True)
+
+    assert lint_result.returncode == 0, (
+        f"Linting failed:\n\n"
+        f"STDOUT:\n{lint_result.stdout}\n"
+        f"STDERR:\n{lint_result.stderr}"
+    )

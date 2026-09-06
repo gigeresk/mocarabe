@@ -12,7 +12,7 @@ IVERILOG_CMD = (
     "mocarabe.sv pe_2_input.sv torus_switch.sv pe_srl.v "
     "pe_mux_2_input.sv pe_mux_3_input.sv SRL16E.v SRLC32E.v SRL64.v mocarabe_tb.sv"
 )
-
+SIM_TIMEOUT = 60
 
 def run_simulation(dfg, ii, iod=1, ard=1, c=20, place_time=0.1, sched_method="ILP"):
     # Run mocarabe to generate the project
@@ -60,41 +60,49 @@ def run_simulation(dfg, ii, iod=1, ard=1, c=20, place_time=0.1, sched_method="IL
     return result.stdout + result.stderr
 
 
+@pytest.mark.timeout(SIM_TIMEOUT)
 def assert_no_errors(sim_output):
     errors = [line for line in sim_output.splitlines() if "Assert error" in line]
     assert not errors, "Simulation assertion failures:\n" + "\n".join(errors)
 
 
+@pytest.mark.timeout(SIM_TIMEOUT)
 def test_int_adder_chain_ii1():
     output = run_simulation("hgr/int_adder_chain", ii=1)
     assert_no_errors(output)
 
 
+@pytest.mark.timeout(SIM_TIMEOUT)
 def test_int_adder_chain_ii2():
     output = run_simulation("hgr/int_adder_chain", ii=2)
     assert_no_errors(output)
 
 
+@pytest.mark.timeout(SIM_TIMEOUT)
 def test_int_adder_chain_ii3():
     output = run_simulation("hgr/int_adder_chain", ii=3)
     assert_no_errors(output)
 
 
+@pytest.mark.timeout(SIM_TIMEOUT)
 def test_int_adder_chain_ii4():
     output = run_simulation("hgr/int_adder_chain", ii=4)
     assert_no_errors(output)
 
 
+@pytest.mark.timeout(SIM_TIMEOUT)
 def test_int_poly_quadratic_ii1():
     output = run_simulation("hgr/int_poly_quadratic", ii=1, c=40)
     assert_no_errors(output)
 
 
+@pytest.mark.timeout(SIM_TIMEOUT)
 def test_int_poly_quadratic_ii2():
     output = run_simulation("hgr/int_poly_quadratic", ii=2, c=40)
     assert_no_errors(output)
 
 
+@pytest.mark.timeout(SIM_TIMEOUT)
 def test_int_poly_quadratic_ii3():
     output = run_simulation("hgr/int_poly_quadratic", ii=3, c=40)
     assert_no_errors(output)
@@ -114,6 +122,7 @@ def test_int_poly_quadratic_ii3():
     raises=AssertionError,
     reason="ILP scheduling infeasible: int_sobel has 25 nets on 2x13 torus with C=20",
 )
+@pytest.mark.timeout(SIM_TIMEOUT)
 def test_xfail_int_sobel_ii1():
     output = run_simulation("hgr/int_sobel", ii=1)
     assert_no_errors(output)
@@ -124,6 +133,7 @@ def test_xfail_int_sobel_ii1():
     raises=AssertionError,
     reason="ILP scheduling infeasible: int_iir8 has 51 nets, SCIP finds no solution",
 )
+@pytest.mark.timeout(SIM_TIMEOUT)
 def test_xfail_int_iir8_ii1():
     output = run_simulation("hgr/int_iir8", ii=1)
     assert_no_errors(output)
@@ -134,6 +144,7 @@ def test_xfail_int_iir8_ii1():
     raises=AssertionError,
     reason="ILP scheduling infeasible: int_dct has 69 nets, SCIP finds no solution",
 )
+@pytest.mark.timeout(SIM_TIMEOUT)
 def test_xfail_int_dct_ii1():
     output = run_simulation("hgr/int_dct", ii=1)
     assert_no_errors(output)
@@ -150,6 +161,7 @@ def test_xfail_int_dct_ii1():
     raises=AssertionError,
     reason="pe_memory_gen port conflict: two operands claim the same PE port/timeslot",
 )
+@pytest.mark.timeout(SIM_TIMEOUT)
 def test_xfail_int_sobel_ii1_c40():
     output = run_simulation("hgr/int_sobel", ii=1, c=40)
     assert_no_errors(output)
@@ -166,6 +178,7 @@ def test_xfail_int_sobel_ii1_c40():
     raises=AssertionError,
     reason="placer bug: IO node packed with compute node; PECONF set to compute type (non-deterministic placer may avoid the bug)",
 )
+@pytest.mark.timeout(SIM_TIMEOUT)
 def test_xfail_int_level1_linear_ii1():
     output = run_simulation("hgr/int_level1_linear", ii=1, c=40, place_time=0.5)
     assert_no_errors(output)

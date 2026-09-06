@@ -5,7 +5,7 @@ from siliconcompiler.tools.yosys.syn_asic import ASICSynthesis
 
 
 @pytest.mark.eda
-@pytest.skip.reason("Need tools dir")
+@pytest.mark.skip(reason="Need tools dir")
 def test_sc_asap7(plain_jane_arch):
 
     asic = ASIC(plain_jane_arch)

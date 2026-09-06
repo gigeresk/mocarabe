@@ -14,21 +14,21 @@ module mocarabe #(
 ) (
     input  wire clk,
     input  wire rst,
-    input  wire `D_WIDTH io_data_in `XY,
-    output wire `D_WIDTH pe_o `XY,
-    output wire `D_WIDTH pe_input0_o `XY,
-    output wire `D_WIDTH pe_input1_o `XY,
+    input  wire [D_W-1:0] io_data_in [X_MAX*Y_MAX-1:0],
+    output wire [D_W-1:0] pe_o [X_MAX*Y_MAX-1:0],
+    output wire [D_W-1:0] pe_input0_o [X_MAX*Y_MAX-1:0],
+    output wire [D_W-1:0] pe_input1_o [X_MAX*Y_MAX-1:0],
     output wire done_pe,
     output wire done_all
 );
 
     wire [NUM_CHANNEL*X_MAX*Y_MAX-1:0]  done;
     wire `XY    done_a_pe;
-    wire `D_WIDTH horiz [X_MAX*Y_MAX-1:0][NUM_CHANNEL-1:0];     // eastbound channels
-    wire `D_WIDTH vert [X_MAX*Y_MAX-1:0][NUM_CHANNEL-1:0];      // northbound/output channels
-    wire `D_WIDTH i_from_pe `XY; // from a pe to a noc node
-    wire `D_WIDTH o_to_pe [X_MAX*Y_MAX-1:0][NUM_CHANNEL-1:0]; // from noc to pe
-    wire `D_WIDTH mux_to_pe [NUM_CHANNEL-1:0][X_MAX*Y_MAX-1:0];//router to pe mux output
+    wire [D_W-1:0] horiz [X_MAX*Y_MAX-1:0][NUM_CHANNEL-1:0];     // eastbound channels
+    wire [D_W-1:0] vert [X_MAX*Y_MAX-1:0][NUM_CHANNEL-1:0];      // northbound/output channels
+    wire [D_W-1:0] i_from_pe `XY; // from a pe to a noc node
+    wire [D_W-1:0] o_to_pe [X_MAX*Y_MAX-1:0][NUM_CHANNEL-1:0]; // from noc to pe
+    wire [D_W-1:0] mux_to_pe [NUM_CHANNEL-1:0][X_MAX*Y_MAX-1:0];//router to pe mux output
 
     reg [$clog2(SCHED_LEN)-1:0] now=0; //bitwidth of schedule
 

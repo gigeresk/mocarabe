@@ -17,7 +17,7 @@
 //    03/15/05 - Initial version.
 // End Revision
 
-`timescale  1 ps / 1 ps
+`timescale  1 ns / 1 ps
 
 
 module SRLC32E (Q, Q31, A, CE, CLK, D);

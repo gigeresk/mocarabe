@@ -1,36 +1,26 @@
-`timescale  1 ps / 1 ps
+`timescale 1ns / 1ps
 
+module SRL64 #(
+    parameter bit [63:0] INIT = 64'h0000000000000000
+)(
+    output wire Q,
+    output wire Q63,
+    input  wire [5:0] A,
+    input  wire CE,
+    input  wire CLK,
+    input  wire D
+);
 
-module SRL64 (Q, Q63, A, CE, CLK, D);
+    // Declaration-site initialization: Works in Xilinx Vivado, Slang, Yosys & Quartus
+    reg [63:0] data = INIT;
 
-    parameter INIT = 64'h0000000000000000;
+    assign Q   = data[A];
+    assign Q63 = data[63];
 
-    output Q;
-    output Q63;
-
-    input  [5:0] A;
-    input  CE, CLK, D;
-
-    reg  [63:0] data;
-
-
-    assign  Q = data[A];
-    assign  Q63 = data[63];
-
-    initial
-    begin
-          assign  data = INIT;
-          while (CLK === 1'b1 || CLK===1'bX)
-            #10;
-          deassign data;
+    always @(posedge CLK) begin
+        if (CE) begin
+            data <= {data[62:0], D};
+        end
     end
 
-  always @(posedge CLK)
-    if (CE == 1'b1)
-      data <= {data[62:0], D};
-
-
 endmodule
-
-
-

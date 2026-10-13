@@ -11,3 +11,10 @@
 
 
 `define D_WIDTH [`BENCHMARK_DATA_WIDTH-1:0]
+
+// Directory prefix (with trailing slash) for $readmem schedule files.
+// Empty by default, so files are read relative to the working directory (simulation).
+// Synthesis flows that run elsewhere pass an absolute path, e.g. -DMOCARABE_DAT_DIR="/abs/rtl/".
+`ifndef MOCARABE_DAT_DIR
+`define MOCARABE_DAT_DIR ""
+`endif

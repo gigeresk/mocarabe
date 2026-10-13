@@ -186,11 +186,14 @@ module mocarabe #(
 
     assign done_all = &done;
     assign done_pe = &done_a_pe;
+// DEBUG leaks in from torus_switch.sv, so also exclude the dump from synthesis
 `ifdef DEBUG
+`ifndef SYNTHESIS
     initial begin
             $dumpfile("mocarabe.vcd");
             $dumpvars(0,mocarabe);
         end
+`endif
 `endif
 
 endmodule

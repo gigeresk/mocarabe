@@ -24,8 +24,8 @@ initial begin //load sel memory
     //TODO: uncomment this when testing final stuff in the end-to-end flow.
     //$readmemb({"mux2_sel_mem_x", $sformatf("%0d",X), "_y", $sformatf("%0d",Y), "0.dat"}, sel_memory0);
     //$readmemb({"mux2_sel_mem_x", $sformatf("%0d",X), "_y", $sformatf("%0d",Y), "1.dat"}, sel_memory1);
-    $readmemb($sformatf("mux2_x%0d_y%0d_sel_mem0.dat", X, Y), sel_memory0);
-    $readmemb($sformatf("mux2_x%0d_y%0d_sel_mem1.dat", X, Y), sel_memory1);
+    $readmemb($sformatf("%smux2_x%0d_y%0d_sel_mem0.dat", `MOCARABE_DAT_DIR, X, Y), sel_memory0);
+    $readmemb($sformatf("%smux2_x%0d_y%0d_sel_mem1.dat", `MOCARABE_DAT_DIR, X, Y), sel_memory1);
 end
 
 integer r;

@@ -59,8 +59,8 @@ module pe_2_input #(
 
     integer pe_init;
     initial begin
-        $readmemh($sformatf("op1_addr_memory_x%0d_y%0d.dat", X, Y), op1_addr_memory);
-        $readmemh($sformatf("op2_addr_memory_x%0d_y%0d.dat", X, Y), op2_addr_memory);
+        $readmemh($sformatf("%sop1_addr_memory_x%0d_y%0d.dat", `MOCARABE_DAT_DIR, X, Y), op1_addr_memory);
+        $readmemh($sformatf("%sop2_addr_memory_x%0d_y%0d.dat", `MOCARABE_DAT_DIR, X, Y), op2_addr_memory);
         done_a_pe = 0;
         global_cycle = 0;
 

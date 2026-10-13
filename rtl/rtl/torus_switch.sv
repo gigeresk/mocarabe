@@ -48,9 +48,9 @@ module torus_switch #(
     reg `D_WIDTH i_from_pe_reg;
 
     initial begin
-        $readmemb($sformatf("noc_memory_n_x%0d_y%0d_c%0d.dat", X, Y, C), n_bound_sel_memory);
-		$readmemb($sformatf("noc_memory_e_x%0d_y%0d_c%0d.dat", X, Y, C), e_bound_sel_memory);
-		$readmemb($sformatf("noc_memory_pe_x%0d_y%0d_c%0d.dat", X, Y, C), pe_bound_sel_memory);
+        $readmemb($sformatf("%snoc_memory_n_x%0d_y%0d_c%0d.dat", `MOCARABE_DAT_DIR, X, Y, C), n_bound_sel_memory);
+		$readmemb($sformatf("%snoc_memory_e_x%0d_y%0d_c%0d.dat", `MOCARABE_DAT_DIR, X, Y, C), e_bound_sel_memory);
+		$readmemb($sformatf("%snoc_memory_pe_x%0d_y%0d_c%0d.dat", `MOCARABE_DAT_DIR, X, Y, C), pe_bound_sel_memory);
        done = 0;
        e_out_r = 0;
        n_out_r = 0;

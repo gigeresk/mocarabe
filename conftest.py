@@ -30,12 +30,16 @@ def plain_jane_arch(plain_jane_arch_dir) -> Design:
 
     design = Design("mocarabe")
     design.set_topmodule("mocarabe", "rtl")
+    # SC runs synthesis in its own build dir, so point $readmem at the generated schedule files
+    dat_dir = os.path.abspath(plain_jane_arch_dir)
+    design.add_define(f'MOCARABE_DAT_DIR="{dat_dir}/"', fileset="rtl")
+    # SC preprocesses in its elaborate step, before yosys adds its own -D SYNTHESIS
+    design.add_define("SYNTHESIS", fileset="rtl")
     for root, _, files in os.walk(plain_jane_arch_dir):
         for filename in files:
             full_path = os.path.join(root, filename)
-            if 'dat' in filename:
-                continue
-            elif filename.endswith('.h'):
+            # .dat files are read via $readmem and .h files via `include, not compiled directly
+            if filename.endswith(('.dat', '.h')):
                 continue
             design.add_file(filename=full_path, fileset="rtl")
     return design

@@ -24,8 +24,8 @@ initial begin //load sel memory
     $display("Loading sel memories at (%0d,%0d)", X, Y);
     //$readmemb({"mux3_sel_mem_x", $sformatf("%0d",X), "_y", $sformatf("%0d",Y), "0.dat"}, sel_memory0);
     //$readmemb({"mux3_sel_mem_x", $sformatf("%0d",X), "_y", $sformatf("%0d",Y), "1.dat"}, sel_memory1);
-    $readmemb("mux3_sel_mem0.dat", sel_memory0);
-    $readmemb("mux3_sel_mem1.dat", sel_memory1);
+    $readmemb($sformatf("%smux3_sel_mem0.dat", `MOCARABE_DAT_DIR), sel_memory0);
+    $readmemb($sformatf("%smux3_sel_mem1.dat", `MOCARABE_DAT_DIR), sel_memory1);
 end
 
 integer r;

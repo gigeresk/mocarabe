@@ -1,61 +1,14 @@
 import itertools
 import copy
+import math
 
 import numpy as np
 
-from .header_gen import DATA_WIDTH
+from .header_gen import DATA_WIDTH, FIFO_DEPTH
 
-
-def torus_min_distance_xy(sourcexy, sinkxy, Nx, Ny) -> tuple:
-    source_x = sourcexy % Nx
-    source_y = sourcexy // Nx
-    sink_x = sinkxy % Nx
-    sink_y = sinkxy // Nx
-
-    # assert( source_x < Nx )
-    # assert( sink_x < Nx )
-    # assert( source_y < Ny )
-    # assert( sink_y < Ny )
-
-    if source_x <= sink_x and source_y <= sink_y:
-        """
-        --------------
-        |  / >> snk  |
-        |  ^         |
-        | src        |
-        --------------
-        """
-        # no rollover
-        return ((sink_x - source_x), (sink_y - source_y))
-    elif source_x > sink_x and source_y <= sink_y:
-        """
-        --------------
-        |  snk       |
-        |  ^         |
-        |>>/    src>>|
-        --------------
-        """
-        return ((Nx + sink_x - source_x), (sink_y - source_y))
-    elif source_x <= sink_x and source_y > sink_y:
-        """
-        --------------
-        |  ^         |
-        |  src       |
-        |  />>>>snk  |
-        --------------
-        """
-        # \n
-        return ((sink_x - source_x), (Ny + sink_y - source_y))
-    else:
-        """
-        ---------------
-        |          ^  |
-        |         src |
-        |  />>snk     |
-        |>>/^       />|
-        --------------
-        """
-        return ((Nx - source_x + sink_x), (Ny + -source_y + sink_y))
+# A_val = execute - arrival - 5 is the SRL read address for an operand; the
+# smallest value the original backward pass produced, kept as the lower bound
+MIN_SRL_ADDRESS = 2
 
 
 def get_net_path_nodes(
@@ -135,98 +88,116 @@ def cycle_for_pe_op(head_pe_xy, net_id, variable, C, T) -> int:
     assert False, "cycle_for_pe_op(): Invalid solution"
 
 
-"""
-Recursive function to generate global timing schedule
-"""
+def routed_hops(head_pe_xy, net_id, h, v, enter, exit_, device):
+    """Hops a net actually travels from its source to the switch where it exits
+    at head_pe_xy.  Routes can detour around the torus when links are taken, so
+    this can exceed the minimum torus distance.  Walks back from the exit with the
+    same source priority (south, then west, then PE) as noc_mux_memory_gen.
+    """
+    T = device.schedule_length
+    step = device.noc_pipelining_stages + 1
+    x, y = head_pe_xy
+    for c in range(device.physical_channels):
+        for t in range(T):
+            if exit_[x][y][c][net_id][t] == 1:
+                break
+        else:
+            continue
+        # the exit at t is fed by what was at this switch one hop earlier
+        t = (t - step) % T
+        hops = 0
+        # each hop entered this switch noc_pipelining_stages + 1 cycles after the previous
+        for _ in range(device.Nx * device.Ny * T + 1):
+            prev_t = (t - step) % T
+            if v[x][y][c][net_id][t] == 1:
+                x, y, t = x, (y - 1) % device.Ny, prev_t
+            elif h[x][y][c][net_id][t] == 1:
+                x, y, t = (x - 1) % device.Nx, y, prev_t
+            elif enter[x][y][c][net_id][t] == 1:
+                return hops
+            else:
+                break
+            hops += 1
+        raise ValueError(f"net {net_id} has no route to its exit at {head_pe_xy}")
+    raise ValueError(f"net {net_id} never exits at {head_pe_xy}")
 
 
-def generate_unadjusted_global_timing(
-    head_node,
-    this_edge,
-    global_node_execute_cycle,
-    global_node_enter_cycle,
-    node_and_edge_port,
-    edge_and_fanout_node_cycles_on_noc,
-    enter,
-    exit_,
-    placement,
-    dataflow_graph,
-    device,
-):
-    head_pe_xy = placement[head_node]
+def solve_global_timing(dataflow_graph, placement, h, v, enter, exit_, device):
+    """Pick execute/enter cycles so every operand's SRL read address fits the FIFO.
 
-    # get tail
-    tail_node = dataflow_graph.get_hyperedge_attribute(this_edge, "tail")[0]
-    tail_pe_xy = placement[tail_node]
-    net_id = int(this_edge[1:]) - 1
+    For a net u -> w the operand waits A_val = E_w - pipe - E_u - noc - 5 cycles
+    in w's SRL (E = NoC enter cycle, noc = cycles on the NoC), which must be in
+    [MIN_SRL_ADDRESS, FIFO_DEPTH - 1].  Each node's E is pinned modulo II to the
+    slot the scheduler chose, so E = II*k + slot and the bounds become integer
+    difference constraints on k, solved exactly with Bellman-Ford.
+    """
+    II = device.II
+    pipe = device.pe_pipelining_stages
+    C = device.physical_channels
+    nets = dataflow_graph.ordered_hyperedge_id_list()
+    nodes = dataflow_graph.ordered_node_id_list()
 
-    tail_node_noc_enter_cycle_modulo = cycle_for_pe_op(
-        tail_pe_xy, net_id, enter, device.physical_channels, device.II
-    )
+    edge_and_fanout_node_cycles_on_noc = [dict() for _ in nets]
+    node_and_edge_port = dict()
+    slot = dict()
+    edges = []  # (tail, head, noc cycles)
 
-    """ TIME SPENT ON NOC """
-    cycles_spent_on_noc_by_head_edge = 0
-    earliest_noc_enter_cycle_for_tail_node = 0
+    for hyperedge_id in nets:
+        net_id = int(hyperedge_id[1:]) - 1
+        tail = dataflow_graph.get_hyperedge_attribute(hyperedge_id, "tail")[0]
+        slot[tail] = cycle_for_pe_op(placement[tail], net_id, enter, C, II)
+        for head in dataflow_graph.get_hyperedge_attribute(hyperedge_id, "head"):
+            hops = routed_hops(placement[head], net_id, h, v, enter, exit_, device)
+            noc = hops * (device.noc_pipelining_stages + 1)
+            edge_and_fanout_node_cycles_on_noc[net_id][head] = noc
+            edges.append((tail, head, noc))
 
-    # calculate how many cycles this will be on the routing fabric for
-    head_xy = head_pe_xy[0] + device.Nx * head_pe_xy[1]
-    tail_xy = tail_pe_xy[0] + device.Nx * tail_pe_xy[1]
-    x_diff, y_diff = torus_min_distance_xy(tail_xy, head_xy, device.Nx, device.Ny)
+    for node in nodes:
+        for port, hyperedge_id in enumerate(dataflow_graph.get_predecessors(node)):
+            node_and_edge_port[(node, hyperedge_id)] = port
+        if node not in slot:
+            # leaves never enter the NoC; they execute in the slot their operand exits
+            hyperedge_id = dataflow_graph.node_is_head_for(node)[0]
+            slot[node] = cycle_for_pe_op(
+                placement[node], int(hyperedge_id[1:]) - 1, exit_, C, II
+            )
 
-    cycles_spent_on_noc_by_head_edge += (x_diff + y_diff) * (
-        device.noc_pipelining_stages + 1
-    )
+    # k_j - k_i <= w  as an edge i -> j of weight w
+    constraints = []
+    for tail, head, noc in edges:
+        base = pipe + noc + 5 + slot[tail] - slot[head]
+        lo = math.ceil((base + MIN_SRL_ADDRESS) / II)
+        hi = math.floor((base + FIFO_DEPTH - 1) / II)
+        if lo > hi:
+            raise ValueError(
+                f"operand from node {tail} to node {head} cannot fit a {FIFO_DEPTH}-deep FIFO"
+            )
+        constraints.append((tail, head, hi))
+        constraints.append((head, tail, -lo))
 
-    edge_and_fanout_node_cycles_on_noc[int(this_edge[1:]) - 1][head_node] = (
-        cycles_spent_on_noc_by_head_edge
-    )
-    earliest_noc_enter_cycle_for_tail_node = (
-        global_node_execute_cycle[head_node] - cycles_spent_on_noc_by_head_edge - 7
-    )
-
-    """ Align cycle with what the schedule found """
-    while (
-        (earliest_noc_enter_cycle_for_tail_node) % device.II
-    ) != tail_node_noc_enter_cycle_modulo:
-        earliest_noc_enter_cycle_for_tail_node -= 1
-
-    if tail_node in global_node_enter_cycle:
-        # this node fans out to more than one op: it has to leave as early as possible.
-        global_node_enter_cycle[tail_node] = min(
-            earliest_noc_enter_cycle_for_tail_node, global_node_enter_cycle[tail_node]
-        )
+    k = {node: 0 for node in nodes}  # virtual source at distance 0 to every node
+    for _ in range(len(nodes) + 1):
+        changed = False
+        for i, j, w in constraints:
+            if k[i] + w < k[j]:
+                k[j] = k[i] + w
+                changed = True
+        if not changed:
+            break
     else:
-        global_node_enter_cycle[tail_node] = earliest_noc_enter_cycle_for_tail_node
+        raise ValueError(
+            f"no timing keeps every operand within the {FIFO_DEPTH}-deep PE FIFOs: "
+            "operands that fan out to consumers far apart in time need deeper FIFOs"
+        )
 
-    global_node_execute_cycle[tail_node] = (
-        global_node_enter_cycle[tail_node] - device.pe_pipelining_stages
-    )
-
-    def channel_count(c=itertools.count(0)):
-        return next(c)
-
-    predecessor_hedges = dataflow_graph.get_predecessors(tail_node)
-
-    for predecessor_hedge in predecessor_hedges:
-        node_and_edge_port[(tail_node, predecessor_hedge)] = channel_count()
-        (
-            global_node_execute_cycle,
-            global_node_enter_cycle,
-            node_and_edge_port,
-            edge_and_fanout_node_cycles_on_noc,
-        ) = generate_unadjusted_global_timing(
-            tail_node,
-            predecessor_hedge,
-            global_node_execute_cycle,
-            global_node_enter_cycle,
-            node_and_edge_port,
-            edge_and_fanout_node_cycles_on_noc,
-            enter,
-            exit_,
-            placement,
-            dataflow_graph,
-            device,
-        )  # enter, C, T won't change
+    global_node_enter_cycle = dict()
+    global_node_execute_cycle = dict()
+    tails = {tail for tail, _, _ in edges}
+    for node in nodes:
+        enter_cycle = II * k[node] + slot[node]
+        if node in tails:
+            global_node_enter_cycle[node] = enter_cycle
+        global_node_execute_cycle[node] = enter_cycle - pipe
 
     return (
         global_node_execute_cycle,
@@ -263,6 +234,47 @@ def get_exit_channel_and_cycle(exit_, x, y, net_id, C, T):
                 return c, t
 
 
+def assign_operand_ports(operands, num_ports):
+    """Pick a PE input port (one SRL FIFO each) for every operand.
+
+    Two operands of the same node need different ports, and different nets that
+    reach a PE in the same slot need different ports (each port's mux captures
+    one channel per slot).  One net feeding two nodes on a PE may use either.
+    With two ports this is 2-colouring the conflict graph.
+    """
+    assert num_ports == 2, "operand port assignment assumes two PE input ports"
+    conflicts = [set() for _ in operands]
+    for i, a in enumerate(operands):
+        for j in range(i + 1, len(operands)):
+            b = operands[j]
+            same_node = a["head"] == b["head"]
+            same_slot = a["pe"] == b["pe"] and a["slot"] == b["slot"] and a["net"] != b["net"]
+            if same_node or same_slot:
+                conflicts[i].add(j)
+                conflicts[j].add(i)
+
+    ports = [None] * len(operands)
+    for first in range(len(operands)):
+        if ports[first] is not None:
+            continue
+        ports[first] = 0
+        queue = [first]
+        while queue:
+            i = queue.pop()
+            for j in conflicts[i]:
+                if ports[j] is None:
+                    ports[j] = 1 - ports[i]
+                    queue.append(j)
+                elif ports[j] == ports[i]:
+                    a, b = operands[i], operands[j]
+                    raise ValueError(
+                        f"no PE port assignment at PE {a['pe']}: operands from nets "
+                        f"{a['net']} (node {a['head']}, slot {a['slot']}) and {b['net']} "
+                        f"(node {b['head']}, slot {b['slot']}) conflict"
+                    )
+    return ports
+
+
 def generate_op_addresses_and_op_port_select(
     device,
     NUM_OPERANDS,
@@ -278,102 +290,55 @@ def generate_op_addresses_and_op_port_select(
 
     Nx = device.Nx
     Ny = device.Ny
-    IO_I = device.IO_I
     C = device.physical_channels
     op_addresses = np.zeros((Nx, Ny, NUM_OPERANDS, T), dtype=int)
     op_port_select = np.zeros((Nx, Ny, NUM_OPERANDS, T), dtype=int)
-    sibling_operands = dataflow_graph.get_sibling_operands()
 
-    samecycle_hedges = np.ndarray((Nx, Ny, T), dtype=object)
-    for x in range(Nx):
-        for y in range(Ny):
-            for t in range(T):
-                samecycle_hedges[x][y][t] = dict()
-
-    pe_in_events = []  # (arrival_time, port, head_pe_xy, tail_node)
-
-    edge_each_fanout_write_into_srl_time = [0] * len(
-        dataflow_graph.ordered_hyperedge_id_list()
-    )
-
-    for ix in range(len(dataflow_graph.ordered_hyperedge_id_list())):
-        edge_each_fanout_write_into_srl_time[ix] = dict()
-
+    operands = []  # one per (net, head) pair; a net listing a head twice (x*x) gives two
     for hyperedge_id in dataflow_graph.ordered_hyperedge_id_iterator():
+        net_id = int(hyperedge_id[1:]) - 1
         tail_node = dataflow_graph.get_hyperedge_attributes(hyperedge_id)["tail"][0]
-        tail_label = dataflow_graph.get_node_attributes(tail_node)["label"]
-        tail_pe_xy = placement[tail_node]
-
-        # fanout
         for head_node in dataflow_graph.get_hyperedge_attribute(hyperedge_id, "head"):
             head_pe_xy = placement[head_node]
-
-            arrival_time = (
-                global_node_enter_cycle[tail_node]
-                + edge_and_fanout_node_cycles_on_noc[int(hyperedge_id[1:]) - 1][
-                    head_node
-                ]
+            channel, t = get_exit_channel_and_cycle(
+                exit_, head_pe_xy[0], head_pe_xy[1], net_id, C, T
             )
-            edge_each_fanout_write_into_srl_time[int(hyperedge_id[1:]) - 1][
-                head_node
-            ] = arrival_time + 1
-            write_into_srl_time = edge_each_fanout_write_into_srl_time[
-                int(hyperedge_id[1:]) - 1
-            ][head_node]
-
-            cycles_on_noc = edge_and_fanout_node_cycles_on_noc[
-                int(hyperedge_id[1:]) - 1
-            ][head_node]
-            hops = cycles_on_noc // (device.noc_pipelining_stages + 1)
-
-            execute_time_for_this_op = global_node_execute_cycle[head_node]
-            load_time = (execute_time_for_this_op - 2) % T
-
-            try:
-                this_node_and_edge_port = node_and_edge_port[(head_node, hyperedge_id)]
-            except:
-                a = 1  # print("SKIPPED\n\n")
-
-            c, t = get_exit_channel_and_cycle(
-                exit_, head_pe_xy[0], head_pe_xy[1], int(hyperedge_id[1:]) - 1, C, T
-            )
-            t_mux = t % T
-            possible_ports = [*range(IO_I)]  # ports
-
-            # if a = b + c, b and c can't use the same PE port
-            for sibling_hedge, port in sibling_operands[int(head_node)].items():
-                if sibling_hedge == hyperedge_id:
-                    continue
-                if port in possible_ports:
-                    possible_ports.remove(port)
-
-            # can't use the same port as another
-            for samecycle_hedge, port in samecycle_hedges[head_pe_xy[0]][head_pe_xy[1]][
-                t_mux
-            ].items():
-                if samecycle_hedge == hyperedge_id:
-                    continue
-                if port in possible_ports:
-                    possible_ports.remove(port)  # port in use in PE
-
-            assert len(possible_ports) > 0, (
-                "There must be some ports left to choose from"
+            operands.append(
+                {
+                    "net": hyperedge_id,
+                    "tail": tail_node,
+                    "head": head_node,
+                    "pe": tuple(head_pe_xy),
+                    "slot": t % T,
+                    "channel": channel,
+                    "arrival": global_node_enter_cycle[tail_node]
+                    + edge_and_fanout_node_cycles_on_noc[net_id][head_node],
+                }
             )
 
-            # Choose first available port
-            port = possible_ports[0]
+    ports = assign_operand_ports(operands, device.IO_I)
 
-            sibling_operands[int(head_node)][hyperedge_id] = port
-            samecycle_hedges[head_pe_xy[0]][head_pe_xy[1]][t_mux][hyperedge_id] = port
+    pe_in_events = []  # (arrival_time, port, head_pe_xy, tail_node)
+    address_owner = dict()
+    for operand, port in zip(operands, ports):
+        x, y = operand["pe"]
+        execute_time_for_this_op = global_node_execute_cycle[operand["head"]]
+        load_time = (execute_time_for_this_op - 2) % T
 
-            op_port_select[head_pe_xy[0]][head_pe_xy[1]][port][t_mux] = c
+        op_port_select[x][y][port][operand["slot"]] = operand["channel"]
 
-            A_val = execute_time_for_this_op - arrival_time - 5
-            op_addresses[head_pe_xy[0]][head_pe_xy[1]][port][load_time] = A_val
+        A_val = execute_time_for_this_op - operand["arrival"] - 5
+        assert 0 <= A_val < FIFO_DEPTH, (
+            f"SRL address {A_val} for node {operand['head']} is outside the FIFO"
+        )
+        owner = address_owner.setdefault((x, y, port, load_time), operand["head"])
+        assert owner == operand["head"], (
+            f"nodes {owner} and {operand['head']} both load from PE {(x, y)} "
+            f"port {port} in slot {load_time}"
+        )
+        op_addresses[x][y][port][load_time] = A_val
 
-            assert op_addresses[head_pe_xy[0]][head_pe_xy[1]][port][load_time] >= 0
-
-            pe_in_events.append((arrival_time, port, head_pe_xy, tail_node))
+        pe_in_events.append((operand["arrival"], port, list(operand["pe"]), operand["tail"]))
 
     return op_addresses, op_port_select, pe_in_events
 
@@ -441,58 +406,17 @@ def generate_and_write_pe_memories(
     IO_I,
     II,
     device,
+    h=None,
+    v=None,
 ):
+    # h, v: the schedule's routed links; operand latency follows the actual route
 
-    global_node_enter_cycle = dict()
-    node_and_edge_port = dict()
-    edge_and_fanout_node_cycles_on_noc = [0] * len(
-        dataflow_graph.ordered_hyperedge_id_list()
-    )
-
-    for ix in range(len(dataflow_graph.ordered_hyperedge_id_list())):
-        edge_and_fanout_node_cycles_on_noc[ix] = dict()
-
-    """ Start generate_unadjusted_global_timing"""
-
-    leaf_nodes = dataflow_graph.get_leaf_nodes()
-
-    global_node_execute_cycle = dict()
-
-    for leaf_node in leaf_nodes:
-        leaf_node_pe_xy = placement_result[leaf_node]
-
-        leaf_edges = dataflow_graph.node_is_head_for(leaf_node)
-        for leaf_edge in leaf_edges:
-            # leaf node exit output PE when the schedule allows it and after pipelining
-            leaf_exit_noc_cycle = cycle_for_pe_op(
-                leaf_node_pe_xy,
-                int(leaf_edge[1:]) - 1,
-                exit_,
-                device.physical_channels,
-                device.II,
-            )
-
-            global_node_execute_cycle[leaf_node] = (
-                leaf_exit_noc_cycle - device.pe_pipelining_stages
-            )
-            (
-                global_node_execute_cycle,
-                global_node_enter_cycle,
-                node_and_edge_port,
-                edge_and_fanout_node_cycles_on_noc,
-            ) = generate_unadjusted_global_timing(
-                leaf_node,
-                leaf_edge,
-                global_node_execute_cycle,
-                global_node_enter_cycle,
-                node_and_edge_port,
-                edge_and_fanout_node_cycles_on_noc,
-                enter,
-                exit_,
-                placement_result,
-                dataflow_graph,
-                device,
-            )
+    (
+        global_node_execute_cycle,
+        global_node_enter_cycle,
+        node_and_edge_port,
+        edge_and_fanout_node_cycles_on_noc,
+    ) = solve_global_timing(dataflow_graph, placement_result, h, v, enter, exit_, device)
 
     """ Adjust all the timing according to most_negative_time"""
     global_node_execute_cycle, global_node_enter_cycle, latency, startup_latency = (

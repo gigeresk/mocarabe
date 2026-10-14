@@ -535,7 +535,7 @@ def generate_and_write_pe_memories(
                 for t in range(device.T):
                     string += bin(op_port_select[x][y][operand][t])[2:] + "\n"
                 this_file = open(
-                    proj_dir + f"/rtl/mux{2}_x{x}_y{y}_sel_mem{operand}.dat", "w+"
+                    proj_dir + f"/rtl/pe_mux_x{x}_y{y}_sel_mem{operand}.dat", "w+"
                 )
                 this_file.write(string)
                 this_file.close()

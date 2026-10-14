@@ -31,6 +31,7 @@ read_verilog -sv rtl/pe_2_input.sv
 read_verilog -sv rtl/pe_1_input.sv
 read_verilog -sv rtl/pe_mux_2_input.sv
 read_verilog -sv rtl/pe_mux_3_input.sv
+read_verilog -sv rtl/pe_mux_n_input.sv
 read_verilog rtl/SRL16E.v
 read_verilog rtl/SRLC32E.v
 read_verilog rtl/SRL64.v

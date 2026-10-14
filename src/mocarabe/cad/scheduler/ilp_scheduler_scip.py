@@ -584,23 +584,13 @@ def schedule(
                         m.addCons(enter[x, y, c, p, t] <= enterc[x, y, p, t])
                         m.addCons(exit_[x, y, c, p, t] <= exitc[x, y, p, t])
 
-    # Set objective: minimize hops, and heavily penalize exits on channels
-    # >= IO_I (those are not connected to pe_mux_2_input in hardware)
+    # Set objective: minimize hops
     m.setObjective(
         scip.quicksum(
             h[x, y, c, p, t] + v[x, y, c, p, t]
             for x in range(0, Nx)
             for y in range(0, Ny)
             for c in range(0, C)
-            for p in range(0, P)
-            for t in range(0, T)
-        )
-        + 1000
-        * scip.quicksum(
-            exit_[x, y, c, p, t]
-            for x in range(0, Nx)
-            for y in range(0, Ny)
-            for c in range(IO_I, C)
             for p in range(0, P)
             for t in range(0, T)
         ),

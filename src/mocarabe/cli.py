@@ -177,6 +177,7 @@ def main(argv=None):
         "pe_srl.v",
         "pe_2_input.sv",
         "pe_mux_3_input.sv",
+        "pe_mux_n_input.sv",
         "SRL16E.v",
         "SRLC32E.v",
         "SRL64.v",

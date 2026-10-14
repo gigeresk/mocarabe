@@ -16,11 +16,21 @@ IVERILOG_CMD = (
 SIM_TIMEOUT = 60
 
 def generate_project(
-    dfg, ii, iod=1, ard=1, c=20, place_time=0.1, sched_method="ILP", device=None
+    dfg,
+    ii,
+    iod=1,
+    ard=1,
+    c=20,
+    place_time=0.1,
+    sched_method="ILP",
+    device=None,
+    max_c=None,
+    split_input_fanout=False,
 ):
     """Run mocarabe and return the generated rtl directory.
 
-    With device, c=None takes the channel count from the device file.
+    With device, c=None takes the channel count from the device file.  max_c
+    starts at c and raises it until the ILP finds a schedule.
     """
     cmd = ["python3", "-m", "mocarabe", "-dfg", dfg, "-II", str(ii)]
     if device:
@@ -29,6 +39,10 @@ def generate_project(
         cmd += ["-iod", str(iod), "-ard", str(ard)]
     if c is not None:
         cmd += ["-C", str(c)]
+    if max_c is not None:
+        cmd += ["--max_C", str(max_c)]
+    if split_input_fanout:
+        cmd += ["--split_input_fanout"]
     cmd += ["--place_time", str(place_time), "--sched_method", sched_method]
     result = subprocess.run(cmd, capture_output=True, text=True, cwd=MOCARABE_ROOT)
     assert result.returncode == 0, f"mocarabe failed:\n{result.stdout}\n{result.stderr}"
@@ -61,6 +75,7 @@ def run_simulation(dfg, ii, **kwargs):
 def assert_no_errors(sim_output):
     errors = [line for line in sim_output.splitlines() if "Assert error" in line]
     assert not errors, "Simulation assertion failures:\n" + "\n".join(errors)
+    assert "=== PASS" in sim_output, "Simulation did not report PASS:\n" + sim_output[-2000:]
 
 
 @pytest.mark.timeout(SIM_TIMEOUT)
@@ -123,9 +138,7 @@ def run_fixed_device(dfg, ii, device):
     with open(os.path.join(rtl_dir, "benchmark.h")) as f:
         peconf = re.search(r"`define PECONF \d+'h(\w+)", f.read()).group(1)
     assert peconf == expected_peconf(device), "PE types do not match the device file"
-    output = simulate(rtl_dir)
-    assert_no_errors(output)
-    assert "=== PASS" in output, output[-2000:]
+    assert_no_errors(simulate(rtl_dir))
 
 
 @pytest.mark.timeout(SIM_TIMEOUT)
@@ -144,21 +157,43 @@ def test_fixed_device_4x4_int_poly_quadratic_ii2():
     run_fixed_device("hgr/int_poly_quadratic", 2, "devices/tt_4x4_1mul.json")
 
 
-# ── Known-failing benchmarks ──────────────────────────────────────────────────
-# These tests document current bugs so we notice when they get fixed.
-
-# Bug: placer co-locates an IO node with a compute node at the same PE.
-# PECONF is then set to the compute type (add/mul), so the IO PE never outputs
-# the testbench-driven value — it outputs 0 or X instead, cascading failures.
-# Observed in int_level1_linear where nodes x2/c2 share PEs with adders.
+# ── Larger benchmarks ─────────────────────────────────────────────────────────
+# The scheduling ILP grows with C, so large C runs out of solver time rather than
+# being infeasible.  These start at low C and let the scheduler raise it.
 
 
-@pytest.mark.xfail(
-    strict=False,
-    raises=AssertionError,
-    reason="placer bug: IO node packed with compute node; PECONF set to compute type (non-deterministic placer may avoid the bug)",
-)
 @pytest.mark.timeout(SIM_TIMEOUT)
-def test_xfail_int_level1_linear_ii1():
-    output = run_simulation("hgr/int_level1_linear", ii=1, c=40, place_time=0.5)
+def test_int_sobel_ii1():
+    # fanout-4 nets; needs cycle-free routing and FIFO-bounded operand timing
+    output = run_simulation("hgr/int_sobel", ii=1, c=2, max_c=8)
+    assert_no_errors(output)
+
+
+@pytest.mark.timeout(SIM_TIMEOUT)
+def test_int_iir8_ii1():
+    # outputs y0..y6 also feed later stages; values overflow 32 bits
+    output = run_simulation("hgr/int_iir8", ii=1, c=2, max_c=8)
+    assert_no_errors(output)
+
+
+@pytest.mark.timeout(SIM_TIMEOUT)
+def test_int_level1_linear_ii1():
+    output = run_simulation("hgr/int_level1_linear", ii=1, c=2, max_c=8)
+    assert_no_errors(output)
+
+
+@pytest.mark.timeout(SIM_TIMEOUT)
+def test_int_approx1_ii1():
+    # T2*T2: one net feeds both ports of the same PE
+    output = run_simulation("hgr/int_approx1", ii=1, c=2, max_c=8)
+    assert_no_errors(output)
+
+
+@pytest.mark.timeout(SIM_TIMEOUT)
+def test_int_poly4_ii1_split_input_fanout():
+    # Horner form: x feeds every stage, so one x would wait longer than the
+    # 64-deep FIFOs allow; each consumer gets its own copy of x instead
+    output = run_simulation(
+        "hgr/int_poly4", ii=1, c=2, max_c=8, split_input_fanout=True
+    )
     assert_no_errors(output)

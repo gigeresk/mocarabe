@@ -20,7 +20,7 @@ The architecture is designed for statically-scheduled, time-multiplexed sharing 
 ## Toolchain
 The toolchain:
 - Compiles a C kernel into a DFG
-- Generates a right-sized architecture by allocating PEs
+- Generates a right-sized architecture by allocating PEs, or maps onto a fixed device you describe
 - Partitions nodes into processing elements
 - Places these PEs in the grid to minimize communication cost (wirelength)
 - Schedules routing and computation
@@ -56,11 +56,12 @@ Compile to a DFG, then map and simulate:
 ./llvm-with-clang.sh int_adder_chain.c hgr/
 
 # Map to a Mocarabe architecture
-  #   -II 1   : initiation interval (schedule length in cycles)
-  #   -C 20   : physical channels per NoC link
-  #   -iod 1  : IO-node packing density (1 IO node per PE)
-  #   -ard 1  : arithmetic-node packing density (1 op per PE)
-mocarabe -dfg hgr/int_adder_chain -II 1 -C 20 -iod 1 -ard 1
+  #   -II 1      : initiation interval (schedule length in cycles)
+  #   -C 2       : physical channels per NoC link to start with
+  #   --max_C 8  : if scheduling fails, raise C up to 8
+  #   -iod 1     : IO-node packing density (1 IO node per PE)
+  #   -ard 1     : arithmetic-node packing density (1 op per PE)
+mocarabe -dfg hgr/int_adder_chain -II 1 -C 2 --max_C 8 -iod 1 -ard 1
 
 # Visualize the placed-and-routed design
 mocarabe-viz --proj proj/int_adder_chain_*/
@@ -71,6 +72,26 @@ iverilog -g2012 -o sim.vvp mocarabe.sv pe_2_input.sv torus_switch.sv \
           pe_srl.v pe_mux_2_input.sv pe_mux_3_input.sv pe_mux_n_input.sv SRL16E.v SRLC32E.v SRL64.v mocarabe_tb.sv
 vvp sim.vvp
 ```
+
+### Mapping options
+- **Channels.** The scheduling ILP grows with the channel count, so a large `-C`
+  often runs out of solver time (`--sched_time`, default 30 s) rather than being
+  infeasible. Start low and let `--max_C` raise it; most benchmarks schedule at C=2–4.
+- **Fixed device.** `--device devices/tt_3x3_1mul.json` maps onto a device you
+  describe instead of a right-sized one. The file draws the PE grid top row first,
+  with `+` (adder), `*` (multiplier) and `IO` cells:
+  ```json
+  {"name": "tt_3x3_1mul",
+   "grid": ["IO  +   IO",
+            "+   *   + ",
+            "IO  +   + "],
+   "channels": 2}
+  ```
+  A PE runs at most II nodes per schedule, so e.g. two multiplies on one `*` PE
+  need `-II 2`; the tool checks this before placement.
+- **Wide input fanout.** Each PE input buffers operands in a 64-deep FIFO. If one
+  input feeds consumers more than 63 cycles apart (e.g. Horner-form polynomials),
+  `--split_input_fanout` gives each consumer its own copy of that input.
 
 
 ## How to Cite

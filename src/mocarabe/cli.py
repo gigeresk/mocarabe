@@ -235,6 +235,16 @@ def main(argv=None):
         os.path.join(file_helper.dot_dir, benchmark_name + ".dot"),
     )
 
+    if len(dataflow_hgraph.get_node_set()) == 0:
+        raise ValueError(f"DFG {dfg_dir} is empty")
+
+    operatorless = dataflow_hgraph.extract_operatorless_nodes()
+    if operatorless:
+        raise ValueError(
+            f"DFG nodes {sorted(set(operatorless.values()))} have two inputs but no "
+            "operator; label them with their operator and add a separate output node"
+        )
+
     """ PE Allocation """
 
     Nx, Ny, device_map = pe_alloc.ClosestFactorsAllocator().allocate_pes(

@@ -128,6 +128,20 @@ class Netlist(DirectedHypergraph):
                 operators[node_id] = label
         return operators
 
+    def extract_operatorless_nodes(self):
+        """Named (IO) nodes with two input nets: an operator whose label was lost.
+
+        e.g. an old HLS export labelled 'result = fscale * sum' as one 'result'
+        node fed by fscale and sum.  An IO PE cannot compute it.
+        """
+        nodes = {}
+        for node_id in self.ordered_node_id_iterator():
+            label = self.get_node_attribute(node_id, "label")
+            is_named = label[0].isalpha() or label.lstrip("-").isnumeric()
+            if is_named and len(self.node_is_head_for(node_id)) > 1:
+                nodes[node_id] = label
+        return nodes
+
     def extract_input_nodes(self):
         # must not be on the end of anything
         input_nodes = {}

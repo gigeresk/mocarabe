@@ -42,3 +42,24 @@ def test_unresolvable_node_raises(tmp_path):
     )
     with pytest.raises(ValueError, match="cannot compute values"):
         get_node_values({"0": 1, "1": 2, "3": 3}, dfg)
+
+
+def test_split_input_fanout(tmp_path):
+    # x feeds '+' and '*' (twice, as x*x); c feeds '+' only
+    path = tmp_path / "dfg.hgr"
+    path.write_text(
+        "4 5\n0:x\n1:c\n2:+\n3:*\n4:y\n--\n0 2 3 3\n1 2\n2 4\n3 4\n"
+    )
+    dfg = Netlist(str(path), split_input_fanout=True)
+    nets = dfg.ordered_hyperedge_id_list()
+    assert nets == [f"e{i + 1}" for i in range(len(nets))]
+    label = lambda node: dfg.get_node_attribute(node, "label")
+    by_tail = {
+        label(dfg.get_hyperedge_attribute(net, "tail")[0]): sorted(
+            label(head) for head in dfg.get_hyperedge_attribute(net, "head")
+        )
+        for net in nets
+    }
+    assert by_tail["x"] == ["+"]
+    assert by_tail["x_1"] == ["*", "*"]  # x*x keeps both ports on one copy
+    assert by_tail["c"] == ["+"]

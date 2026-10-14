@@ -88,6 +88,11 @@ def parse_args(argv=None):
         default=1,
     )
     parser.add_argument(
+        "--split_input_fanout",
+        action="store_true",
+        help="give each consumer of an input its own IO node (avoids deep FIFO waits)",
+    )
+    parser.add_argument(
         "--sched_method",
         metavar="scheduling_method",
         type=str,
@@ -207,7 +212,9 @@ def main(argv=None):
         # If there are fewer than II instances of a given operator, unroll by II
         # This is to keep PE utilization high for small benchmarks
         dataflow_hgraph = Netlist(
-            os.path.join(dfg_dir, benchmark_name + ".hgr"), unroll_factor=1
+            os.path.join(dfg_dir, benchmark_name + ".hgr"),
+            unroll_factor=1,
+            split_input_fanout=args.split_input_fanout,
         )
         arith_oprtrs = collections.Counter(
             dataflow_hgraph.extract_node_arithmetic_operators().values()
@@ -230,13 +237,16 @@ def main(argv=None):
             unroll_factor = 1
 
         dataflow_hgraph = Netlist(
-            os.path.join(dfg_dir, benchmark_name + ".hgr"), unroll_factor
+            os.path.join(dfg_dir, benchmark_name + ".hgr"),
+            unroll_factor,
+            split_input_fanout=args.split_input_fanout,
         )
         print(f"Auto-Unroll factor: {unroll_factor}")
     else:
         dataflow_hgraph = Netlist(
             dfg_path=os.path.join(dfg_dir, benchmark_name + ".hgr"),
             unroll_factor=unroll_factor,
+            split_input_fanout=args.split_input_fanout,
         )
 
     write_dot(

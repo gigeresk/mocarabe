@@ -7,7 +7,7 @@ from halp.utilities import directed_statistics
 
 
 class Netlist(DirectedHypergraph):
-    def __init__(self, dfg_path="", unroll_factor=1):
+    def __init__(self, dfg_path="", unroll_factor=1, split_input_fanout=False):
 
         super(Netlist, self).__init__()
         self.number_of_hedges = 0
@@ -15,7 +15,7 @@ class Netlist(DirectedHypergraph):
 
         self.name = ""
         if dfg_path != "":
-            self.deserialize_df_hypergraph(dfg_path)
+            self.deserialize_df_hypergraph(dfg_path, split_input_fanout)
             self.unroll_dfg(unroll_factor)
 
     def serialize_df_hypergraph(self, path: str) -> None:
@@ -67,9 +67,16 @@ class Netlist(DirectedHypergraph):
                 dfg_file.write("{0}\n".format(line))
 
     # TODO: refactor this and the init a bit...
-    def deserialize_df_hypergraph(self, path: str) -> DirectedHypergraph:
+    def deserialize_df_hypergraph(
+        self, path: str, split_input_fanout=False
+    ) -> DirectedHypergraph:
+        """split_input_fanout gives every consumer of an input or constant its own
+        copy of that IO node, so each copy can be fed when its consumer needs it
+        instead of one value waiting in PE FIFOs for the slowest consumer.
+        """
 
         finished_parsing_vertices = False
+        edges = []
         with open(path, "r") as fp:
             for line_count, line in enumerate(fp):
                 if line_count == 0:
@@ -94,19 +101,50 @@ class Netlist(DirectedHypergraph):
                     source = vertices[0]
                     sinks = vertices[1:]
 
-                    self.add_hyperedge([source], sinks)
+                    edges.append((source, sinks))
 
-        assert self.number_of_hedges == len(self.get_hyperedge_id_set()), (
+        assert self.number_of_hedges == len(edges), (
             "Hyperedge count inconsistent with file header"
         )
         assert self.number_of_vertices == len(self.get_node_set()), (
             "node count inconsistent with file header"
         )
 
+        if split_input_fanout:
+            edges = self._split_input_fanout(edges)
+        # hyperedge ids (e1, e2, ...) double as net indices, so add them last
+        for source, sinks in edges:
+            self.add_hyperedge([source], sinks)
+        self.number_of_hedges = len(edges)
+        self.number_of_vertices = len(self.get_node_set())
+
         self.dataflow_graph = self
 
         self.G = self.to_graph()  # precompute this (nx Graph)
         return self
+
+    def _split_input_fanout(self, edges):
+        sinks_of_any_net = {sink for _, sinks in edges for sink in sinks}
+        next_id = max(int(node) for node in self.get_node_set()) + 1
+        split_edges = []
+        for source, sinks in edges:
+            consumers = list(dict.fromkeys(sinks))  # distinct, in order; x*x stays one copy
+            if source in sinks_of_any_net or len(consumers) < 2:
+                split_edges.append((source, sinks))
+                continue
+            label = self.get_node_attribute(source, "label")
+            for copy, consumer in enumerate(consumers):
+                copy_sinks = [sink for sink in sinks if sink == consumer]
+                if copy == 0:
+                    split_edges.append((source, copy_sinks))
+                    continue
+                copy_id = str(next_id)
+                next_id += 1
+                # numeric constants keep their label; inputs get a suffix
+                copy_label = label if label.lstrip("-").isnumeric() else f"{label}_{copy}"
+                self.add_node(copy_id, label=copy_label)
+                split_edges.append((copy_id, copy_sinks))
+        return split_edges
 
     def extract_node_operators(self):
         operators = {}

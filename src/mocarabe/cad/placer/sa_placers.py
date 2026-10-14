@@ -1,4 +1,5 @@
 import abc
+import collections
 import random
 import itertools
 from simanneal import Annealer
@@ -13,6 +14,27 @@ def initialize_state(dfg_v_to_partition_id, Nx, Ny):
     return initial_state
 
 
+def initialize_fixed_state(partitioned_op_map, device_map, Nx, Ny):
+    """Assign each partition to a PE of the same type on a fixed device"""
+    free_pes = collections.defaultdict(list)
+    for pe_id in range(Nx * Ny):
+        free_pes[device_map[pe_id % Nx][pe_id // Nx]].append(pe_id)
+
+    state = [0] * len(partitioned_op_map)
+    for partition_id, op in enumerate(partitioned_op_map):
+        assert free_pes[op], f"device has fewer '{op}' PEs than '{op}' partitions"
+        state[partition_id] = free_pes[op].pop(0)
+    return state
+
+
+def same_type_partition_groups(partitioned_op_map):
+    """For each partition, the partitions it can swap PEs with on a fixed device"""
+    groups = collections.defaultdict(list)
+    for partition_id, op in enumerate(partitioned_op_map):
+        groups[op].append(partition_id)
+    return [tuple(groups[op]) for op in partitioned_op_map]
+
+
 def topographical_swap(
     dataflow_hypergraph,
     partitioned_op_map,
@@ -22,8 +44,9 @@ def topographical_swap(
     state,
     swap_rounds=3,
     type="topological",
+    same_type_only=False,
 ):
-    """No placement constraints yet"""
+    """same_type_only keeps every partition on a PE of its own type (fixed device)"""
 
     # go through every dfg node, compare.  if before, swap
 
@@ -47,6 +70,13 @@ def topographical_swap(
 
                 j_node_partition = dfg_v_to_partition_id[int(node_j)]
                 j_node_pe = state[j_node_partition]
+
+                if (
+                    same_type_only
+                    and partitioned_op_map[i_node_partition]
+                    != partitioned_op_map[j_node_partition]
+                ):
+                    continue
 
                 i_node_x = i_node_pe % Nx
                 i_node_y = i_node_pe // Nx
@@ -332,8 +362,11 @@ class AnnealingCongestionAwarePlacer(Annealer):
         Ny,
         dfg_v_to_partition_id,
         viz_placement_dir=False,
+        same_type_groups=None,
     ):  # TODO GET RID OF NX NY
         super(AnnealingCongestionAwarePlacer, self).__init__(state)
+        # fixed device: partitions only swap PEs within their own type
+        self.same_type_groups = same_type_groups
         self.dataflow_hypergraph = dataflow_hypergraph
         self.partitioned_netlist = partitioned_netlist
         self.Nx = Nx
@@ -372,8 +405,13 @@ class AnnealingCongestionAwarePlacer(Annealer):
                 )
 
     def move(self):
-        a = int((len(self.state) - 1) * random.random())
-        b = int((len(self.state) - 1) * random.random())
+        if self.same_type_groups is not None:
+            a = int(len(self.state) * random.random())
+            group = self.same_type_groups[a]
+            b = group[int(len(group) * random.random())]
+        else:
+            a = int((len(self.state) - 1) * random.random())
+            b = int((len(self.state) - 1) * random.random())
 
         self.state[a], self.state[b] = self.state[b], self.state[a]
 

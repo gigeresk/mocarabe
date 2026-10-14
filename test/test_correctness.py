@@ -1,5 +1,6 @@
 # Tests to ensure that simulations are running correctly
 
+import json
 import subprocess
 import re
 import os
@@ -14,39 +15,31 @@ IVERILOG_CMD = (
 )
 SIM_TIMEOUT = 60
 
-def run_simulation(dfg, ii, iod=1, ard=1, c=20, place_time=0.1, sched_method="ILP"):
-    # Run mocarabe to generate the project
-    result = subprocess.run(
-        [
-            "python3",
-            "-m",
-            "mocarabe",
-            "-dfg",
-            dfg,
-            "-iod",
-            str(iod),
-            "-ard",
-            str(ard),
-            "-II",
-            str(ii),
-            "-C",
-            str(c),
-            "--place_time",
-            str(place_time),
-            "--sched_method",
-            sched_method,
-        ],
-        capture_output=True,
-        text=True,
-        cwd=MOCARABE_ROOT,
-    )
+def generate_project(
+    dfg, ii, iod=1, ard=1, c=20, place_time=0.1, sched_method="ILP", device=None
+):
+    """Run mocarabe and return the generated rtl directory.
+
+    With device, c=None takes the channel count from the device file.
+    """
+    cmd = ["python3", "-m", "mocarabe", "-dfg", dfg, "-II", str(ii)]
+    if device:
+        cmd += ["--device", device]
+    else:
+        cmd += ["-iod", str(iod), "-ard", str(ard)]
+    if c is not None:
+        cmd += ["-C", str(c)]
+    cmd += ["--place_time", str(place_time), "--sched_method", sched_method]
+    result = subprocess.run(cmd, capture_output=True, text=True, cwd=MOCARABE_ROOT)
     assert result.returncode == 0, f"mocarabe failed:\n{result.stdout}\n{result.stderr}"
 
     # Extract the rtl directory from the output
     match = re.search(r"cd (proj/\S+/rtl/)", result.stdout)
     assert match, f"Could not find rtl dir in mocarabe output:\n{result.stdout}"
-    rtl_dir = os.path.join(MOCARABE_ROOT, match.group(1))
+    return os.path.join(MOCARABE_ROOT, match.group(1))
 
+
+def simulate(rtl_dir):
     # Compile
     result = subprocess.run(
         IVERILOG_CMD, shell=True, capture_output=True, text=True, cwd=rtl_dir
@@ -58,6 +51,10 @@ def run_simulation(dfg, ii, iod=1, ard=1, c=20, place_time=0.1, sched_method="IL
         ["vvp", "mocarabe_sim.vvp"], capture_output=True, text=True, cwd=rtl_dir
     )
     return result.stdout + result.stderr
+
+
+def run_simulation(dfg, ii, **kwargs):
+    return simulate(generate_project(dfg, ii, **kwargs))
 
 
 @pytest.mark.timeout(SIM_TIMEOUT)
@@ -106,6 +103,45 @@ def test_int_poly_quadratic_ii2():
 def test_int_poly_quadratic_ii3():
     output = run_simulation("hgr/int_poly_quadratic", ii=3, c=40)
     assert_no_errors(output)
+
+
+# ── Fixed device flow ─────────────────────────────────────────────────────────
+# PE types and layout come from devices/*.json instead of being sized to the DFG.
+
+
+def expected_peconf(device_file):
+    """PECONF hex for a device grid: one nibble per PE, pe_id = x + y*Nx, LSB first"""
+    with open(os.path.join(MOCARABE_ROOT, device_file)) as f:
+        rows = [row.split() for row in json.load(f)["grid"]]
+    op_code = {"+": "0", "*": "1", "IO": "2"}
+    pes = [op_code[t] for row in reversed(rows) for t in row]  # first row is the top
+    return "".join(reversed(pes))
+
+
+def run_fixed_device(dfg, ii, device):
+    rtl_dir = generate_project(dfg, ii, c=None, device=device)
+    with open(os.path.join(rtl_dir, "benchmark.h")) as f:
+        peconf = re.search(r"`define PECONF \d+'h(\w+)", f.read()).group(1)
+    assert peconf == expected_peconf(device), "PE types do not match the device file"
+    output = simulate(rtl_dir)
+    assert_no_errors(output)
+    assert "=== PASS" in output, output[-2000:]
+
+
+@pytest.mark.timeout(SIM_TIMEOUT)
+def test_fixed_device_int_adder_chain_ii2():
+    run_fixed_device("hgr/int_adder_chain", 2, "devices/tt_3x3_1mul.json")
+
+
+@pytest.mark.timeout(SIM_TIMEOUT)
+def test_fixed_device_int_poly_quadratic_ii2():
+    # both multiplies share the single '*' PE
+    run_fixed_device("hgr/int_poly_quadratic", 2, "devices/tt_3x3_1mul.json")
+
+
+@pytest.mark.timeout(SIM_TIMEOUT)
+def test_fixed_device_4x4_int_poly_quadratic_ii2():
+    run_fixed_device("hgr/int_poly_quadratic", 2, "devices/tt_4x4_1mul.json")
 
 
 # ── Known-failing benchmarks ──────────────────────────────────────────────────

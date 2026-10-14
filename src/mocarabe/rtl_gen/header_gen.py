@@ -36,7 +36,7 @@ def verilog_header_gen(rtl_dir, device, pe_operators):
             pe_id_to_operator[ix] = "1"
         elif op == "+":
             pe_id_to_operator[ix] = "0"
-        elif op == "IN" or op == "OUT":
+        elif op in ("IN", "OUT", "IO"):
             pe_id_to_operator[ix] = "2"
         else:
             pe_id_to_operator[ix] = "3"

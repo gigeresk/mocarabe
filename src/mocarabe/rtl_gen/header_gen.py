@@ -1,3 +1,7 @@
+# PE datapath width; testbench expected values wrap at this width
+DATA_WIDTH = 32
+
+
 def verilog_header_gen(rtl_dir, device, pe_operators):
     # //eg:
     # `define BENCHMARK_DATA_WIDTH 32
@@ -7,12 +11,12 @@ def verilog_header_gen(rtl_dir, device, pe_operators):
     # `define peconf 9'b001001001
 
     result = "// Application-specific macro parameters"
-    result += "`define BENCHMARK_DATA_WIDTH 32\n"
+    result += f"`define BENCHMARK_DATA_WIDTH {DATA_WIDTH}\n"
     result += f"`define BENCHMARK_X_WIDTH {device.Nx}\n"
     result += f"`define BENCHMARK_Y_WIDTH {device.Ny}\n"
     result += f"`define BENCHMARK_SCHED_LEN {device.II}\n"
     result += f"`define BENCHMARK_CHAN_WIDTH {device.physical_channels}\n"
-    result += "`define BENCHMARK_DATA_WIDTH 32\n"
+    result += f"`define BENCHMARK_DATA_WIDTH {DATA_WIDTH}\n"
     result += "`define FIFO_DEPTH 64\n"  # should make variable
     result += (
         f"`define TORUS_SWITCH_PIPE_NUM  {int(device.noc_pipelining_stages) - 1}\n"

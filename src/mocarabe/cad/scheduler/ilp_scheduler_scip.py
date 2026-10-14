@@ -463,6 +463,39 @@ def schedule(
                             + exit_[x, y, c, p, 0]
                         )
 
+    # The flow constraints above only require a net to be present wherever it
+    # leaves, so a closed ring of links (e.g. (1,4)->(0,4)->(1,4) on a 2-wide
+    # torus) can "feed" an exit without being connected to the source.  Order
+    # labels that strictly increase along every used link rule out such cycles
+    # (MTZ); summing them around a cycle is a contradiction even for continuous
+    # labels, so they add no branching.
+    max_order = Nx * Ny * T
+    order = {}
+    for x in range(0, Nx):
+        for y in range(0, Ny):
+            for c in range(0, C):
+                for p in range(0, P):
+                    for t in range(0, T):
+                        order[x, y, c, p, t] = m.addVar(
+                            vtype="C", lb=0, ub=max_order, name=f"order_{x}_{y}_{c}_{p}_{t}"
+                        )
+    for x in range(0, Nx):
+        for y in range(0, Ny):
+            for c in range(0, C):
+                for p in range(0, P):
+                    for t in range(0, T):
+                        t_next = (t + NOC_PIPE + 1) % T
+                        east = ((x + 1) % Nx, y, c, p, t_next)
+                        north = (x, (y + 1) % Ny, c, p, t_next)
+                        m.addCons(
+                            order[east]
+                            >= order[x, y, c, p, t] + 1 - (max_order + 1) * (1 - h[east])
+                        )
+                        m.addCons(
+                            order[north]
+                            >= order[x, y, c, p, t] + 1 - (max_order + 1) * (1 - v[north])
+                        )
+
     if noNocInitialAndFinal and T > 1:
         # Originally we removed this, but it actualy helps if we throw out
         # the whole "T=II" approach, where T isn't just the upper bound but is the actual guaranteed schedule length.
@@ -610,6 +643,11 @@ def schedule(
     resource_graph.create(device)
 
     scheduled_netlist = ScheduledNetlist(resource_graph)
+
+    def is_set(var):
+        # binaries can come back as 0.9999999 within SCIP's feasibility tolerance
+        return round(m.getSolVal(sol, var)) == 1
+
     for p in range(0, P):
         scheduled_net = ScheduledNet()
         for x in range(0, Nx):
@@ -622,13 +660,13 @@ def schedule(
                             c,
                             p,
                             t,
-                            m.getSolVal(sol, enter[x, y, c, p, t]),
+                            round(m.getSolVal(sol, enter[x, y, c, p, t])),
                         )
 
-                        if m.getSolVal(sol, enter[x, y, c, p, t]) == 1.0:  # none == 0
+                        if is_set(enter[x, y, c, p, t]):  # none == 0
                             # import pdb; pdb.set_trace()
                             solFile.write(enterLine + "\n")
-                            if m.getSolVal(sol, enter[x, y, c, p, t]) == 1.0:
+                            if is_set(enter[x, y, c, p, t]):
                                 scheduled_net.enter_noc = resource_graph.pe_out_switch[
                                     (x, y, c, t)
                                 ]
@@ -639,12 +677,12 @@ def schedule(
                             c,
                             p,
                             t,
-                            m.getSolVal(sol, exit_[x, y, c, p, t]),
+                            round(m.getSolVal(sol, exit_[x, y, c, p, t])),
                         )
-                        if m.getSolVal(sol, exit_[x, y, c, p, t]) == 1.0:
+                        if is_set(exit_[x, y, c, p, t]):
                             # import pdb; pdb.set_trace()
                             solFile.write(exitLine + "\n")
-                            if m.getSolVal(sol, exit_[x, y, c, p, t]) == 1.0:
+                            if is_set(exit_[x, y, c, p, t]):
                                 scheduled_net.exit_noc.append(
                                     resource_graph.pe_in_switch[(x, y, c, t)]
                                 )
@@ -655,11 +693,11 @@ def schedule(
                             c,
                             p,
                             t,
-                            m.getSolVal(sol, h[x, y, c, p, t]),
+                            round(m.getSolVal(sol, h[x, y, c, p, t])),
                         )
-                        if m.getSolVal(sol, h[x, y, c, p, t]) == 1.0:
+                        if is_set(h[x, y, c, p, t]):
                             solFile.write(hLine + "\n")
-                            if m.getSolVal(sol, h[x, y, c, p, t]) == 1.0:
+                            if is_set(h[x, y, c, p, t]):
                                 scheduled_net.noc_hops.append(
                                     resource_graph.h_noc[(x, y, c, t)]
                                 )
@@ -670,11 +708,11 @@ def schedule(
                             c,
                             p,
                             t,
-                            m.getSolVal(sol, v[x, y, c, p, t]),
+                            round(m.getSolVal(sol, v[x, y, c, p, t])),
                         )
-                        if m.getSolVal(sol, v[x, y, c, p, t]) == 1.0:
+                        if is_set(v[x, y, c, p, t]):
                             solFile.write(vLine + "\n")
-                            if m.getSolVal(sol, v[x, y, c, p, t]) == 1.0:
+                            if is_set(v[x, y, c, p, t]):
                                 scheduled_net.noc_hops.append(
                                     resource_graph.v_noc[(x, y, c, t)]
                                 )

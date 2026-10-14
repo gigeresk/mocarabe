@@ -68,7 +68,7 @@ mocarabe-viz --proj proj/int_adder_chain_*/
 # Simulate the generated RTL (path printed by the command above)
 cd proj/int_adder_chain_*/rtl/
 iverilog -g2012 -o sim.vvp mocarabe.sv pe_2_input.sv torus_switch.sv \
-          pe_srl.v pe_mux_2_input.sv pe_mux_3_input.sv SRL16E.v SRLC32E.v SRL64.v mocarabe_tb.sv
+          pe_srl.v pe_mux_2_input.sv pe_mux_3_input.sv pe_mux_n_input.sv SRL16E.v SRLC32E.v SRL64.v mocarabe_tb.sv
 vvp sim.vvp
 ```
 

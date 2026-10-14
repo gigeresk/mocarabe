@@ -10,7 +10,7 @@ MOCARABE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IVERILOG_CMD = (
     "iverilog -g2012 -o mocarabe_sim.vvp "
     "mocarabe.sv pe_2_input.sv torus_switch.sv pe_srl.v "
-    "pe_mux_2_input.sv pe_mux_3_input.sv SRL16E.v SRLC32E.v SRL64.v mocarabe_tb.sv"
+    "pe_mux_2_input.sv pe_mux_3_input.sv pe_mux_n_input.sv SRL16E.v SRLC32E.v SRL64.v mocarabe_tb.sv"
 )
 SIM_TIMEOUT = 60
 

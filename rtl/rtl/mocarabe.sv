@@ -103,41 +103,25 @@ module mocarabe #(
                         .e_out(horiz[(x) + (y)*X_MAX][c])
                     );
                 end
-                //fanin for 3 channels to 2 PE inputs
-                if (NUM_CHANNEL == 3)begin
-                    pe_mux_3_input #(
-                        .SCHED_LEN(SCHED_LEN),
-                        .X(x),
-                        .Y(y)
-                    )
-                    mux_inst
-                    (
-                        .clk(clk),
-                        .rst(rst),
-                        .i0(o_to_pe[(x) + (y)*X_MAX][0]),
-                        .i1(o_to_pe[(x) + (y)*X_MAX][1]),
-                        .i2(o_to_pe[(x) + (y)*X_MAX][2]),
-                        .out0(mux_to_pe[0][(x) + (y)*X_MAX]),
-                        .out1(mux_to_pe[1][(x) + (y)*X_MAX])
-                    );
+                //fanin from every channel to the 2 PE inputs
+                wire [D_W-1:0] mux_in [NUM_CHANNEL-1:0];
+                for (c = 0; c < NUM_CHANNEL; c = c + 1) begin : mux_ins
+                    assign mux_in[c] = o_to_pe[(x) + (y)*X_MAX][c];
                 end
-                //fanin for 2 channels to 2 PE inputs
-                else begin
-                    pe_mux_2_input #(
-                        .SCHED_LEN(SCHED_LEN),
-                        .X(x),
-                        .Y(y)
-                    )
-                    mux_inst
-                    (
-                        .clk(clk),
-                        .rst(rst),
-                        .i0(o_to_pe[(x) + (y)*X_MAX][0]),
-                        .i1(o_to_pe[(x) + (y)*X_MAX][1]),
-                        .out0(mux_to_pe[0][(x) + (y)*X_MAX]),
-                        .out1(mux_to_pe[1][(x) + (y)*X_MAX])
-                    );
-                end
+                pe_mux_n_input #(
+                    .SCHED_LEN(SCHED_LEN),
+                    .NUM_CHANNEL(NUM_CHANNEL),
+                    .X(x),
+                    .Y(y)
+                )
+                mux_inst
+                (
+                    .clk(clk),
+                    .rst(rst),
+                    .in(mux_in),
+                    .out0(mux_to_pe[0][(x) + (y)*X_MAX]),
+                    .out1(mux_to_pe[1][(x) + (y)*X_MAX])
+                );
 
             end
             //C = 1, single input PE

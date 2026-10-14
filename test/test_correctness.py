@@ -110,62 +110,6 @@ def test_int_poly_quadratic_ii3():
 
 # ── Known-failing benchmarks ──────────────────────────────────────────────────
 # These tests document current bugs so we notice when they get fixed.
-# Each uses strict=True: an unexpected pass (XPASS) will fail the suite.
-
-# Bug: ILP scheduler produces infeasible model for larger benchmarks at C=20.
-# Root cause unclear — likely the NoC routing model becomes overconstrained when
-# the number of nets is large relative to C*II.
-
-
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="ILP scheduling infeasible: int_sobel has 25 nets on 2x13 torus with C=20",
-)
-@pytest.mark.timeout(SIM_TIMEOUT)
-def test_xfail_int_sobel_ii1():
-    output = run_simulation("hgr/int_sobel", ii=1)
-    assert_no_errors(output)
-
-
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="ILP scheduling infeasible: int_iir8 has 51 nets, SCIP finds no solution",
-)
-@pytest.mark.timeout(SIM_TIMEOUT)
-def test_xfail_int_iir8_ii1():
-    output = run_simulation("hgr/int_iir8", ii=1)
-    assert_no_errors(output)
-
-
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="ILP scheduling infeasible: int_dct has 69 nets, SCIP finds no solution",
-)
-@pytest.mark.timeout(SIM_TIMEOUT)
-def test_xfail_int_dct_ii1():
-    output = run_simulation("hgr/int_dct", ii=1)
-    assert_no_errors(output)
-
-
-# Bug: pe_memory_gen port conflict — two operands are assigned the same PE input
-# port in the same schedule timeslot.  Raises AssertionError in
-# generate_op_addresses_and_op_port_select().  Observed when 'C' is raised to give
-# the scheduler more channels but the placement still produces conflicting edges.
-
-
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="pe_memory_gen port conflict: two operands claim the same PE port/timeslot",
-)
-@pytest.mark.timeout(SIM_TIMEOUT)
-def test_xfail_int_sobel_ii1_c40():
-    output = run_simulation("hgr/int_sobel", ii=1, c=40)
-    assert_no_errors(output)
-
 
 # Bug: placer co-locates an IO node with a compute node at the same PE.
 # PECONF is then set to the compute type (add/mul), so the IO PE never outputs

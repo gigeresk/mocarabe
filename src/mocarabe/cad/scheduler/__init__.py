@@ -26,7 +26,10 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
         tag,
         sched_time=30,
         seed=0,
+        max_channels=None,
     ):
+        # max_channels: keep raising C after failed attempts until it would exceed
+        # max_channels.  None keeps the legacy retry count (MAX_RUN_COUNT).
         if not os.path.exists("log"):
             print("Creating 'log' directory")
             os.makedirs("log")
@@ -92,7 +95,7 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
             log_file.write(header_string)
             log_file.close()
 
-        while current_run_count < MAX_RUN_COUNT:
+        while current_run_count < MAX_RUN_COUNT or max_channels is not None:
             try:
                 log_string = (
                     "#starting: %s, " % file_helper.benchmark_name
@@ -399,6 +402,13 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
                 return
 
             current_run_count = run_count()
+            if max_channels is not None:
+                if device.physical_channels >= max_channels:
+                    print(f"No schedule found with C up to {max_channels}")
+                    return None
+                device.physical_channels = 1 + device.physical_channels
+                print(f"Retrying with C={device.physical_channels}")
+                continue
             device.physical_channels = 1 + device.physical_channels
             if device.physical_channels == 3:
                 device.noc_pipelining_stages += 1

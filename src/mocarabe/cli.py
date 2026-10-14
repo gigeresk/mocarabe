@@ -46,6 +46,13 @@ def parse_args(argv=None):
         help="physical channel width for NoC",
     )
     parser.add_argument(
+        "--max_C",
+        metavar="max channel width",
+        type=int,
+        default=None,
+        help="if scheduling fails, keep raising C up to this value",
+    )
+    parser.add_argument(
         "--log",
         metavar="log",
         type=str,
@@ -119,6 +126,7 @@ def main(argv=None):
     io_diffusion = args.iod
     arith_diffusion = args.ard
     seed = args.seed
+    max_C = args.max_C
 
     noc_pipelining_stages = args.noc_pipe
     pe_pipelining_stages = args.pe_pipe
@@ -338,11 +346,15 @@ def main(argv=None):
             tag,
             sched_time=sched_time,
             seed=seed,
+            max_channels=max_C,
         )
 
         if scheduled_netlist != None:
             """ RTL """
             T = II
+            # the scheduler raises C when it cannot find a schedule
+            C = device.physical_channels
+            print(f"Scheduled with C={C}")
 
             print("--------------Generating Simulation RTL--------------\n")
 

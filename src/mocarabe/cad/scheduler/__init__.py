@@ -36,7 +36,9 @@ class SchedulerStrategy(metaclass=abc.ABCMeta):
 
         rerun = True
         MAX_RUN_COUNT = 10
-        TIMEOUT_IN_SECONDS = sched_time
+        # SCIP stops itself after sched_time; this outer guard also covers model building
+        TIMEOUT_IN_SECONDS = 2 * sched_time + 60
+        num_vars = num_constrs = -1  # only known after a successful solve
         dataflow_mode = False
         io_pes = []
         boundingBoxEnabled = False

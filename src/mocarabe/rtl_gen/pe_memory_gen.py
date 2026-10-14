@@ -3,6 +3,8 @@ import copy
 
 import numpy as np
 
+from .header_gen import DATA_WIDTH
+
 
 def torus_min_distance_xy(sourcexy, sinkxy, Nx, Ny) -> tuple:
     source_x = sourcexy % Nx
@@ -389,6 +391,7 @@ def get_node_values(input_values, dataflow_graph):
         unknown_nodes.remove(node)
 
     while len(unknown_nodes) > 0:
+        num_unknown = len(unknown_nodes)
         for unknown_node in unknown_nodes:
             parent_nodes = dataflow_graph.get_parent_nodes(unknown_node)
 
@@ -399,22 +402,29 @@ def get_node_values(input_values, dataflow_graph):
             if both_parents_are_known and len(parent_nodes) > 0:
                 head_label = dataflow_graph.get_node_attribute(unknown_node, "label")
 
+                # the PE datapath is DATA_WIDTH bits wide and wraps
                 if head_label == "*":
                     known_node_values[unknown_node] = (
                         known_node_values[parent_nodes[0]]
                         * known_node_values[parent_nodes[1]]
-                    )
+                    ) % 2**DATA_WIDTH
                 elif head_label == "+":
                     known_node_values[unknown_node] = (
                         known_node_values[parent_nodes[0]]
                         + known_node_values[parent_nodes[1]]
-                    )
+                    ) % 2**DATA_WIDTH
                 else:
                     assert True, (
                         f"Unsupported operand {head_label}.  Please add support"
                     )
 
                 unknown_nodes.remove(unknown_node)
+
+        if len(unknown_nodes) == num_unknown:
+            stuck = {
+                n: dataflow_graph.get_node_attribute(n, "label") for n in unknown_nodes
+            }
+            raise ValueError(f"cannot compute values for DFG nodes {stuck}")
 
     return known_node_values
 

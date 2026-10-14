@@ -4,6 +4,7 @@ from .base import PlacerStrategy
 
 from .partitioner import partition_with_ilp_scip
 from .sa_placers import initialize_state, topographical_swap, debug_energy
+from .sa_placers import initialize_fixed_state, same_type_partition_groups
 from .sa_placers import (
     AnnealingCongestionAwarePlacer,
 )
@@ -24,7 +25,11 @@ class IlpAndSimulatedAnnealingPlacer(PlacerStrategy):
         log_dir=".",
         placement_constraints="",
         seed=0,
+        fixed_device_map=None,
     ):
+        # fixed_device_map: (Nx, Ny) PE types of a fixed device; partitions are
+        # placed only on PEs of their own type.  None sizes PE types to the DFG.
+        fixed_device = fixed_device_map is not None
 
         dfg_v_to_partition_id, partitioned_op_map = partition_with_ilp_scip(
             dataflow_hypergraph,
@@ -34,6 +39,7 @@ class IlpAndSimulatedAnnealingPlacer(PlacerStrategy):
             II,
             log_dir,
             seed=seed,
+            fixed_device=fixed_device,
         )
 
         print("\n--------------Placement--------------\n")
@@ -42,7 +48,14 @@ class IlpAndSimulatedAnnealingPlacer(PlacerStrategy):
             "Have not yet fully implemented placement constraints."
         )
 
-        initial_state = initialize_state(dfg_v_to_partition_id, Nx, Ny)
+        if fixed_device:
+            initial_state = initialize_fixed_state(
+                partitioned_op_map, fixed_device_map, Nx, Ny
+            )
+            same_type_groups = same_type_partition_groups(partitioned_op_map)
+        else:
+            initial_state = initialize_state(dfg_v_to_partition_id, Nx, Ny)
+            same_type_groups = None
 
         print(
             f"Initial energy: {debug_energy(dataflow_hypergraph, partitioned_op_map, dfg_v_to_partition_id, initial_state, Nx, Ny)} "
@@ -55,6 +68,7 @@ class IlpAndSimulatedAnnealingPlacer(PlacerStrategy):
             Nx,
             Ny,
             initial_state,
+            same_type_only=fixed_device,
         )
 
         # placer = QuadraticWirelengthAnnealingPlacer( initial_state, dataflow_hypergraph, partitioned_op_map,Nx,Ny,dfg_v_to_partition_id)#, "svg/")
@@ -65,6 +79,7 @@ class IlpAndSimulatedAnnealingPlacer(PlacerStrategy):
             Nx,
             Ny,
             dfg_v_to_partition_id,
+            same_type_groups=same_type_groups,
         )  # , "svg/")
 
         print(f"Starting energy: {placer.energy()}")

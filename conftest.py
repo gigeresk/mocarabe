@@ -16,6 +16,7 @@ def pytest_generate_tests(metafunc):
     # one test case per file for tests that take these arguments
     files = {
         "int_dfg_path": sorted(REPO_ROOT.glob("hgr/int_*/int_*.hgr")),
+        "device_file": sorted(REPO_ROOT.glob("devices/*.json")),
     }
     for arg, paths in files.items():
         if arg in metafunc.fixturenames:

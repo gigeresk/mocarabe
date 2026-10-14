@@ -10,7 +10,7 @@ import numpy as np
 from networkx.drawing.nx_pydot import write_dot
 
 from mocarabe.cad.netlist import Netlist
-from mocarabe.device import Device
+from mocarabe.device import Device, load_device_spec, check_dfg_fits
 import mocarabe.pe_allocator as pe_alloc
 import mocarabe.cad.placer as placr
 import mocarabe.cad.scheduler as schedulr
@@ -42,8 +42,8 @@ def parse_args(argv=None):
         "-C",
         metavar="channel width",
         type=int,
-        default=1,
-        help="physical channel width for NoC",
+        default=None,
+        help="physical channel width for NoC (default 1, or the --device file's channels)",
     )
     parser.add_argument(
         "--max_C",
@@ -51,6 +51,13 @@ def parse_args(argv=None):
         type=int,
         default=None,
         help="if scheduling fails, keep raising C up to this value",
+    )
+    parser.add_argument(
+        "--device",
+        metavar="device file",
+        type=str,
+        default=None,
+        help="fixed device JSON (see devices/); default sizes the array to the DFG",
     )
     parser.add_argument(
         "--log",
@@ -127,6 +134,11 @@ def main(argv=None):
     arith_diffusion = args.ard
     seed = args.seed
     max_C = args.max_C
+
+    # fixed device flow: PE types and layout come from a device file instead of the DFG
+    device_spec = load_device_spec(args.device) if args.device else None
+    if C is None:
+        C = device_spec.channels if device_spec else 1
 
     noc_pipelining_stages = args.noc_pipe
     pe_pipelining_stages = args.pe_pipe
@@ -256,9 +268,18 @@ def main(argv=None):
 
     """ PE Allocation """
 
-    Nx, Ny, device_map = pe_alloc.ClosestFactorsAllocator().allocate_pes(
-        dataflow_hgraph, II, io_diffusion, arith_diffusion
-    )
+    if device_spec:
+        if io_diffusion != 1.0 or arith_diffusion != 1.0:
+            warnings.warn(
+                f"{bcolors.WARNING}-iod/-ard are ignored with --device{bcolors.ENDC}"
+            )
+        check_dfg_fits(device_spec, dataflow_hgraph, II)
+        print(f"Fixed device: {device_spec.name}")
+        Nx, Ny, device_map = device_spec.Nx, device_spec.Ny, device_spec.device_map
+    else:
+        Nx, Ny, device_map = pe_alloc.ClosestFactorsAllocator().allocate_pes(
+            dataflow_hgraph, II, io_diffusion, arith_diffusion
+        )
     print(f"Nx={Nx}, Ny={Ny}")
     print(pe_alloc.to_string(device_map))
     num_partitions_given_to_operator = collections.Counter(
@@ -288,7 +309,13 @@ def main(argv=None):
         Ny,
         file_helper.log_dir,
         seed=seed,
+        fixed_device_map=device_map if device_spec else None,
     )
+    if device_spec:
+        placed_types = [device_map[pe % Nx][pe // Nx] for pe in range(Nx * Ny)]
+        assert list(pe_operators) == placed_types, (
+            f"placement changed PE types: {pe_operators} != {placed_types}"
+        )
 
     # serialize placement
     file_helper.write_list_to_file(

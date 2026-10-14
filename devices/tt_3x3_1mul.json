@@ -1,0 +1,9 @@
+{
+  "name": "tt_3x3_1mul",
+  "grid": [
+    "IO  +   IO",
+    "+   *   + ",
+    "IO  +   + "
+  ],
+  "channels": 2
+}

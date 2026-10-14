@@ -10,7 +10,14 @@ def partition_operator(operator_ranges, partition):
 
 
 def partition_with_ilp_scip(
-    HG, K, num_partitions_given_to_operator, partition_filename, II, log_dir=".", seed=0
+    HG,
+    K,
+    num_partitions_given_to_operator,
+    partition_filename,
+    II,
+    log_dir=".",
+    seed=0,
+    fixed_device=False,
 ):
     """
     HYPERGRAPH PARTITIONING TECHNIQUES; D. Kucar, S. Areibi, A. Vannelli
@@ -118,6 +125,11 @@ def partition_with_ilp_scip(
         nets_for_each_operator[v] = nets_for_each_operator[v] + 1
 
     for partition in range(K):
+        if fixed_device:
+            # partitions are the PEs of a fixed device: each runs at most II nodes
+            # per modulo schedule, and unused PEs stay empty
+            model.addCons(scip.quicksum(x[v, partition] for v in range(V)) <= II)
+            continue
         MAX_ARITH_PARTITION_SIZE = 10
         # if partition >= operator_ranges['*'][0] and partition <=  operator_ranges['*'][1]:
         if partition_operator(operator_ranges, partition) == "*":
@@ -166,7 +178,7 @@ def partition_with_ilp_scip(
     # FOR IO OPERATIONS
     # (3)a partition size LB
     MIN_IO_PARTITION_SIZE = 0
-    for partition in range(K):
+    for partition in range(K if not fixed_device else 0):
         if partition in operator_ranges["IN"]:
             model.addCons(
                 scip.quicksum(x[v, partition] for v in range(V))
@@ -179,16 +191,15 @@ def partition_with_ilp_scip(
             )  # TODO can update
     # (3)b partition size UB
     # can't be V/K because we don't balance things out?
-    MAX_IO_PARTITION_SIZE = math.ceil(
-        (len(in_nodes) + len(out_nodes))
-        / (len(operator_ranges["IN"]) + len(operator_ranges["OUT"]))
-    )
-    MAX_IN_PARTITION_SIZE = math.ceil(len(in_nodes) / len(operator_ranges["IN"]))
-    MAX_OUT_PARTITION_SIZE = math.ceil(len(out_nodes) / len(operator_ranges["OUT"]))
+    if not fixed_device:
+        MAX_IN_PARTITION_SIZE = math.ceil(len(in_nodes) / len(operator_ranges["IN"]))
+        MAX_OUT_PARTITION_SIZE = math.ceil(
+            len(out_nodes) / len(operator_ranges["OUT"])
+        )
     # if MAX_IO_PARTITION_SIZE > II * self.C:
     #     print("II of {} too low for IO_MAX_PARTITION_SIZE {}".format( II, MAX_IO_PARTITION_SIZE))
     # MAX_IO_PARTITION_SIZE = #math.ceil( V/K) # len(arithmetic_operators) / K ) # TODO can update
-    for partition in range(K):
+    for partition in range(K if not fixed_device else 0):
         # if VERBOSE:
         #     print("MAX_IO_PARTITION_SIZE", MAX_IO_PARTITION_SIZE)
         # >= operator_ranges['IO'][0] and partition <=  operator_ranges['IO'][1]:
@@ -222,6 +233,12 @@ def partition_with_ilp_scip(
                 scip.quicksum(x[v, partition] for partition in operator_range) == 1
             )
             # don't want this partition to be anywhere else: none unconstrained
+        elif fixed_device and (str(v) in in_nodes or str(v) in out_nodes):
+            # inputs and outputs share the device's IO PEs
+            operator_range = operator_ranges["IO"]
+            model.addCons(
+                scip.quicksum(x[v, partition] for partition in operator_range) == 1
+            )
         elif str(v) in in_nodes:
             operator_range = operator_ranges["IN"]
             model.addCons(

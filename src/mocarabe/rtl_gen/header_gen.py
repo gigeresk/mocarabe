@@ -1,5 +1,7 @@
 # PE datapath width; testbench expected values wrap at this width
 DATA_WIDTH = 32
+# depth of each PE input's SRL FIFO; operands can wait at most FIFO_DEPTH - 1 cycles
+FIFO_DEPTH = 64
 
 
 def verilog_header_gen(rtl_dir, device, pe_operators):
@@ -17,7 +19,7 @@ def verilog_header_gen(rtl_dir, device, pe_operators):
     result += f"`define BENCHMARK_SCHED_LEN {device.II}\n"
     result += f"`define BENCHMARK_CHAN_WIDTH {device.physical_channels}\n"
     result += f"`define BENCHMARK_DATA_WIDTH {DATA_WIDTH}\n"
-    result += "`define FIFO_DEPTH 64\n"  # should make variable
+    result += f"`define FIFO_DEPTH {FIFO_DEPTH}\n"
     result += (
         f"`define TORUS_SWITCH_PIPE_NUM  {int(device.noc_pipelining_stages) - 1}\n"
     )

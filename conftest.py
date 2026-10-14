@@ -1,6 +1,25 @@
 import os
+from pathlib import Path
+
 import pytest
 from siliconcompiler import Design
+
+REPO_ROOT = Path(__file__).resolve().parent
+
+
+@pytest.fixture
+def repo_root() -> Path:
+    return REPO_ROOT
+
+
+def pytest_generate_tests(metafunc):
+    # one test case per file for tests that take these arguments
+    files = {
+        "int_dfg_path": sorted(REPO_ROOT.glob("hgr/int_*/int_*.hgr")),
+    }
+    for arg, paths in files.items():
+        if arg in metafunc.fixturenames:
+            metafunc.parametrize(arg, paths, ids=[p.stem for p in paths])
 
 @pytest.fixture
 def plain_jane_arch_dir() -> str:

@@ -60,6 +60,28 @@ def parse_args(argv=None):
         help="fixed device JSON (see devices/); default sizes the array to the DFG",
     )
     parser.add_argument(
+        "--bitstream",
+        choices=["hard", "soft"],
+        default="hard",
+        help="default configuration in benchmark.h: hard ($readmem) or soft (programmed "
+        "serially through cfg_en/cfg_data); every project gets both",
+    )
+    parser.add_argument(
+        "--cfg_width",
+        metavar="soft bitstream word width",
+        type=int,
+        default=1,
+        help="bits per clock on cfg_data when programming the soft bitstream",
+    )
+    parser.add_argument(
+        "--ii_max",
+        metavar="max initiation interval",
+        type=int,
+        default=None,
+        help="schedule slots the soft bitstream's memories hold (default: the --device "
+        "file's ii_max, else II)",
+    )
+    parser.add_argument(
         "--log",
         metavar="log",
         type=str,
@@ -144,6 +166,10 @@ def main(argv=None):
     device_spec = load_device_spec(args.device) if args.device else None
     if C is None:
         C = device_spec.channels if device_spec else 1
+    # soft bitstream memories hold II_MAX slots; the programmed II picks how many run
+    ii_max = args.ii_max or (device_spec.ii_max if device_spec else None) or II
+    assert ii_max >= II, f"II_MAX {ii_max} (--ii_max or the device file) is smaller than -II {II}"
+    assert args.cfg_width >= 1, "--cfg_width must be at least 1"
 
     noc_pipelining_stages = args.noc_pipe
     pe_pipelining_stages = args.pe_pipe
@@ -203,6 +229,9 @@ def main(argv=None):
         "pe_2_input.sv",
         "pe_mux_3_input.sv",
         "pe_mux_n_input.sv",
+        "cfg_loader.sv",
+        "cfg_row.sv",
+        "pe_cfg.sv",
         "SRL16E.v",
         "SRLC32E.v",
         "SRL64.v",
@@ -427,7 +456,12 @@ def main(argv=None):
             )
 
             verilog_header = RTLGenerator.verilog_header_gen(
-                file_helper.proj_dir + "rtl/", device, pe_operators
+                file_helper.proj_dir + "rtl/",
+                device,
+                pe_operators,
+                ii_max=ii_max,
+                cfg_width=args.cfg_width,
+                soft=args.bitstream == "soft",
             )
 
             verilog_header_filename = file_helper.rtl_dir + "benchmark.h"
@@ -457,8 +491,17 @@ def main(argv=None):
                 )
             )
 
+            # the soft bitstream packs the same .dat files the hard bitstream loads
+            cfg_words = 0
+            if C > 1:
+                cfg_words = RTLGenerator.write_bitstream(
+                    file_helper.rtl_dir, Nx, Ny, C, II, ii_max, args.cfg_width
+                )
+            elif args.bitstream == "soft":
+                raise ValueError("the soft bitstream needs -C 2 or more")
+
             RTLGenerator.testbench_gen(
-                file_helper.proj_dir + "rtl/", Nx, Ny, C, asserts_string
+                file_helper.proj_dir + "rtl/", Nx, Ny, C, asserts_string, cfg_words
             )
 
             Sim.print_vivado_sim_cmd(file_helper)

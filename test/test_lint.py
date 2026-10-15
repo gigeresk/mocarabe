@@ -4,7 +4,12 @@ import pytest
 
 
 @pytest.mark.eda
-def test_lint(plain_jane_arch_dir):
+@pytest.mark.parametrize("mode", ["hard", "soft"])
+def test_lint(plain_jane_arch_dir, mode):
+    # Every project carries both bitstreams; check the RTL each one selects.
+    # Full elaboration from the testbench, not --lint-only: that skips the
+    # hierarchy, so code inside generate branches (e.g. the soft bitstream's)
+    # is never checked.
     verilog_files = []
 
     for root, _, files in os.walk(plain_jane_arch_dir):
@@ -16,10 +21,13 @@ def test_lint(plain_jane_arch_dir):
 
     cmd = [
         "slang",
-        "--lint-only",
+        "--top",
+        "mocarabe_tb",
         "-I",
         plain_jane_arch_dir,
         "+define+USE_SYSTEMVERILOG",
+        f"+define+BITSTREAM_SOFT={int(mode == 'soft')}",
+        "+define+TRACE",
     ] + verilog_files
 
     lint_result = subprocess.run(cmd, capture_output=True, text=True)

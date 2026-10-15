@@ -12,11 +12,15 @@ module pe_2_input #(
     parameter PIPE = 5
 ) (
     input  wire clk,        // clock
+    input  wire rst,        // holds the slot counter at 0
     input wire `D_WIDTH i_operand0, //1st input from Noc
     input wire `D_WIDTH i_operand1, //2nd input from Noc
     input wire `D_WIDTH io_input,   // driven by testbench for IO PEs (OP==2)
     output reg done_a_pe,
-    output wire `D_WIDTH result
+    output wire `D_WIDTH result,
+    // soft bitstream: slot t's {op2, op1} SRL read addresses at cfg[t*2*ADDR_W +: 2*ADDR_W]
+    input  wire [SCHED_LEN*2*$clog2(`FIFO_DEPTH)-1:0] cfg,
+    input  wire [(SCHED_LEN==1 ? 1 : $clog2(SCHED_LEN))-1:0] sched_last  // II - 1
 );
     // Processing Element
 
@@ -32,8 +36,30 @@ module pe_2_input #(
 
     // 1) FIFO for inputs
     // op1 fifo
-     reg [$clog2(`FIFO_DEPTH)-1:0] op1_addr_memory `SCHED;
-     reg [$clog2(`FIFO_DEPTH)-1:0] op2_addr_memory `SCHED;
+     localparam ADDR_W = $clog2(`FIFO_DEPTH);
+     wire [ADDR_W-1:0] op1_addr_memory `SCHED;
+     wire [ADDR_W-1:0] op2_addr_memory `SCHED;
+
+    genvar slot;
+    generate
+        if (`BITSTREAM_SOFT) begin : soft_bitstream
+            for (slot = 0; slot < SCHED_LEN; slot = slot + 1) begin : slots
+                assign op1_addr_memory[slot] = cfg[slot*2*ADDR_W +: ADDR_W];
+                assign op2_addr_memory[slot] = cfg[slot*2*ADDR_W+ADDR_W +: ADDR_W];
+            end
+        end else begin : hard_bitstream
+            reg [ADDR_W-1:0] op1_mem `SCHED;
+            reg [ADDR_W-1:0] op2_mem `SCHED;
+            initial begin
+                $readmemh($sformatf("%sop1_addr_memory_x%0d_y%0d.dat", `MOCARABE_DAT_DIR, X, Y), op1_mem);
+                $readmemh($sformatf("%sop2_addr_memory_x%0d_y%0d.dat", `MOCARABE_DAT_DIR, X, Y), op2_mem);
+            end
+            for (slot = 0; slot < SCHED_LEN; slot = slot + 1) begin : slots
+                assign op1_addr_memory[slot] = op1_mem[slot];
+                assign op2_addr_memory[slot] = op2_mem[slot];
+            end
+        end
+    endgenerate
      reg [$clog2(`FIFO_DEPTH)-1:0] op1_addr;
      reg [$clog2(`FIFO_DEPTH)-1:0] op2_addr;
 
@@ -59,8 +85,6 @@ module pe_2_input #(
 
     integer pe_init;
     initial begin
-        $readmemh($sformatf("%sop1_addr_memory_x%0d_y%0d.dat", `MOCARABE_DAT_DIR, X, Y), op1_addr_memory);
-        $readmemh($sformatf("%sop2_addr_memory_x%0d_y%0d.dat", `MOCARABE_DAT_DIR, X, Y), op2_addr_memory);
         done_a_pe = 0;
         global_cycle = 0;
 
@@ -95,7 +119,7 @@ module pe_2_input #(
         // $display("@%0d: (%0d, %0d): result: %0d.  i_operand0: %0d, i_operand1: %0d. ", now, X, Y, result,i_operand0,i_operand1);
         op1_addr <= op1_addr_memory[now];
         op2_addr <= op2_addr_memory[now];
-        if( now == SCHED_LEN - 1 )
+        if( rst || now == sched_last )
             now <= 0;
         else
             now <= now + 1;

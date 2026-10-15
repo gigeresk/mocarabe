@@ -36,6 +36,7 @@ def test_non_square_grid():
         ({"grid": ["IO -", "+ +"]}, "unknown PE type '-'"),
         ({"grid": ["IO +", "+ *"], "channels": 1}, "'channels' must be"),
         ({"grid": []}, "'grid' must be"),
+        ({"grid": ["IO +", "+ *"], "ii_max": 0}, "'ii_max' must be"),
     ],
 )
 def test_bad_device(data, message):
@@ -55,3 +56,8 @@ def test_dfg_needs_missing_pe_type(repo_root):
     spec = parse_device_spec({"grid": ["IO +", "+ IO"]})
     with pytest.raises(ValueError, match=r"has no '\*' PEs"):
         check_dfg_fits(spec, netlist(repo_root, "int_poly_quadratic"), II=4)
+
+
+def test_ii_max_optional():
+    assert parse_device_spec({"grid": ["IO +", "+ *"]}).ii_max is None
+    assert parse_device_spec({"grid": ["IO +", "+ *"], "ii_max": 4}).ii_max == 4

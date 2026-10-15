@@ -30,6 +30,7 @@ class DeviceSpec:
     Ny: int
     device_map: np.ndarray  # (Nx, Ny) of PE types, indexed like the allocator's device_map
     channels: int
+    ii_max: int = None  # schedule slots the soft bitstream holds; None = the run's II
 
 
 def parse_device_spec(data, source="<device>"):
@@ -55,13 +56,17 @@ def parse_device_spec(data, source="<device>"):
     if not isinstance(channels, int) or channels < MIN_CHANNELS:
         raise ValueError(f"{source}: 'channels' must be an integer >= {MIN_CHANNELS}")
 
+    ii_max = data.get("ii_max")
+    if ii_max is not None and (not isinstance(ii_max, int) or ii_max < 1):
+        raise ValueError(f"{source}: 'ii_max' must be a positive integer")
+
     device_map = np.ndarray((Nx, Ny), dtype=object)
     for i, row in enumerate(rows):
         y = Ny - 1 - i  # first row is the top of the array
         for x, token in enumerate(row):
             device_map[x][y] = token
 
-    return DeviceSpec(data.get("name", source), Nx, Ny, device_map, channels)
+    return DeviceSpec(data.get("name", source), Nx, Ny, device_map, channels, ii_max)
 
 
 def load_device_spec(path):

@@ -34,6 +34,7 @@ class RTLGenerator:
     from .noc_mux_memory_gen import generate_and_write_noc_mux_memories
     from .pe_memory_gen import get_net_path_nodes, generate_and_write_pe_memories
     from .testbench_gen import testbench_gen
+    from .bitstream_gen import write_bitstream
 
     @staticmethod
     def deserialize_schedule(sched_filename, Nx, Ny, C, P, T):

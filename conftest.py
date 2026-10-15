@@ -58,8 +58,9 @@ def plain_jane_arch(plain_jane_arch_dir) -> Design:
     for root, _, files in os.walk(plain_jane_arch_dir):
         for filename in files:
             full_path = os.path.join(root, filename)
-            # .dat files are read via $readmem and .h files via `include, not compiled directly
-            if filename.endswith(('.dat', '.h')):
+            # only HDL sources: .dat files are read via $readmem, .h files via `include,
+            # and bitstream/testbench outputs are not part of the design
+            if not filename.endswith(('.v', '.sv')) or filename.endswith('_tb.sv'):
                 continue
             design.add_file(filename=full_path, fileset="rtl")
     return design

@@ -18,7 +18,10 @@ module torus_switch #(
     output wire `D_WIDTH o_to_pe, // output from this noc node to local PE
     output wire `D_WIDTH n_out, // northbound output data
     output wire `D_WIDTH e_out, // eastbound output data
-    output reg done // no data being processed
+    output reg done, // no data being processed
+    // soft bitstream: slot t's {to-PE, east, north} selects at cfg[t*6 +: 6]
+    input  wire [SCHED_LEN*6-1:0] cfg,
+    input  wire [(SCHED_LEN==1 ? 1 : $clog2(SCHED_LEN))-1:0] sched_last  // II - 1
 );
 
     reg  `D_WIDTH s;            // south input data register
@@ -28,11 +31,36 @@ module torus_switch #(
 
     localparam NOW_BITWIDTH = SCHED_LEN==1? 1: $clog2(SCHED_LEN);
     // Northbound mux select memory
-    reg [1:0] n_bound_sel_memory[SCHED_LEN-1:0];
+    wire [1:0] n_bound_sel_memory[SCHED_LEN-1:0];
     // Eastbound mux select memory
-    reg [1:0] e_bound_sel_memory[SCHED_LEN-1:0];
+    wire [1:0] e_bound_sel_memory[SCHED_LEN-1:0];
     // Into-PE mux select memory
-    reg [1:0] pe_bound_sel_memory[SCHED_LEN-1:0];
+    wire [1:0] pe_bound_sel_memory[SCHED_LEN-1:0];
+
+    genvar slot;
+    generate
+        if (`BITSTREAM_SOFT) begin : soft_bitstream
+            for (slot = 0; slot < SCHED_LEN; slot = slot + 1) begin : slots
+                assign n_bound_sel_memory[slot] = cfg[slot*6 +: 2];
+                assign e_bound_sel_memory[slot] = cfg[slot*6+2 +: 2];
+                assign pe_bound_sel_memory[slot] = cfg[slot*6+4 +: 2];
+            end
+        end else begin : hard_bitstream
+            reg [1:0] n_mem[SCHED_LEN-1:0];
+            reg [1:0] e_mem[SCHED_LEN-1:0];
+            reg [1:0] pe_mem[SCHED_LEN-1:0];
+            initial begin
+                $readmemb($sformatf("%snoc_memory_n_x%0d_y%0d_c%0d.dat", `MOCARABE_DAT_DIR, X, Y, C), n_mem);
+                $readmemb($sformatf("%snoc_memory_e_x%0d_y%0d_c%0d.dat", `MOCARABE_DAT_DIR, X, Y, C), e_mem);
+                $readmemb($sformatf("%snoc_memory_pe_x%0d_y%0d_c%0d.dat", `MOCARABE_DAT_DIR, X, Y, C), pe_mem);
+            end
+            for (slot = 0; slot < SCHED_LEN; slot = slot + 1) begin : slots
+                assign n_bound_sel_memory[slot] = n_mem[slot];
+                assign e_bound_sel_memory[slot] = e_mem[slot];
+                assign pe_bound_sel_memory[slot] = pe_mem[slot];
+            end
+        end
+    endgenerate
 
     reg  `D_WIDTH e_out_r;
     (* dont_touch = "true" *) reg  `D_WIDTH e_out_pipe [PIPENUM-1:0];
@@ -48,9 +76,6 @@ module torus_switch #(
     reg `D_WIDTH i_from_pe_reg;
 
     initial begin
-        $readmemb($sformatf("%snoc_memory_n_x%0d_y%0d_c%0d.dat", `MOCARABE_DAT_DIR, X, Y, C), n_bound_sel_memory);
-		$readmemb($sformatf("%snoc_memory_e_x%0d_y%0d_c%0d.dat", `MOCARABE_DAT_DIR, X, Y, C), e_bound_sel_memory);
-		$readmemb($sformatf("%snoc_memory_pe_x%0d_y%0d_c%0d.dat", `MOCARABE_DAT_DIR, X, Y, C), pe_bound_sel_memory);
        done = 0;
        e_out_r = 0;
        n_out_r = 0;
@@ -89,7 +114,7 @@ module torus_switch #(
             o_to_pe_r <= o_to_pe_c;
             now <= now + 1;
 
-            if( now == SCHED_LEN - 1 )
+            if( now == sched_last )
                 now <= 0;
             else
                 now <= now + 1;

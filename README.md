@@ -69,7 +69,8 @@ mocarabe-viz --proj proj/int_adder_chain_*/
 # Simulate the generated RTL (path printed by the command above)
 cd proj/int_adder_chain_*/rtl/
 iverilog -g2012 -o sim.vvp mocarabe.sv pe_2_input.sv torus_switch.sv \
-          pe_srl.v pe_mux_2_input.sv pe_mux_3_input.sv pe_mux_n_input.sv SRL16E.v SRLC32E.v SRL64.v mocarabe_tb.sv
+          pe_srl.v pe_mux_2_input.sv pe_mux_3_input.sv pe_mux_n_input.sv \
+          cfg_loader.sv cfg_row.sv pe_cfg.sv SRL16E.v SRLC32E.v SRL64.v mocarabe_tb.sv
 vvp sim.vvp
 ```
 
@@ -89,6 +90,14 @@ vvp sim.vvp
   ```
   A PE runs at most II nodes per schedule, so e.g. two multiplies on one `*` PE
   need `-II 2`; the tool checks this before placement.
+- **Hard or soft bitstream.** Every project carries both. The *hard* bitstream
+  bakes the schedule into the RTL with `$readmem` (smallest, one kernel per chip).
+  The *soft* bitstream loads it at run time: hold `cfg_en` low for a clock, then high, and send
+  `bitstream.hex`, one `--cfg_width`-bit word per clock on `cfg_data` (so
+  `cfg_width + 1` pins), then pulse `rst` and run. Its memories hold `--ii_max`
+  schedule slots (or the device file's `ii_max`) and the bitstream sets the II
+  actually used. Pick the default with `--bitstream soft`, or per simulation with
+  `iverilog -DBITSTREAM_SOFT=1`.
 - **Wide input fanout.** Each PE input buffers operands in a 64-deep FIFO. If one
   input feeds consumers more than 63 cycles apart (e.g. Horner-form polynomials),
   `--split_input_fanout` gives each consumer its own copy of that input.

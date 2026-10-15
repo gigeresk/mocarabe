@@ -4,7 +4,9 @@ DATA_WIDTH = 32
 FIFO_DEPTH = 64
 
 
-def verilog_header_gen(rtl_dir, device, pe_operators):
+def verilog_header_gen(rtl_dir, device, pe_operators, ii_max=None, cfg_width=1, soft=False):
+    """soft picks the default bitstream (BITSTREAM_SOFT, overridable with
+    -DBITSTREAM_SOFT=0|1); ii_max sizes the soft bitstream's schedule memories."""
     # //eg:
     # `define BENCHMARK_DATA_WIDTH 32
     # `define BENCHMARK_X_WIDTH 3
@@ -20,6 +22,11 @@ def verilog_header_gen(rtl_dir, device, pe_operators):
     result += f"`define BENCHMARK_CHAN_WIDTH {device.physical_channels}\n"
     result += f"`define BENCHMARK_DATA_WIDTH {DATA_WIDTH}\n"
     result += f"`define FIFO_DEPTH {FIFO_DEPTH}\n"
+    result += f"`define BENCHMARK_II_MAX {ii_max or device.II}\n"
+    result += f"`define CFG_WIDTH {cfg_width}\n"
+    result += "`ifndef BITSTREAM_SOFT\n"
+    result += f"`define BITSTREAM_SOFT {int(soft)}\n"
+    result += "`endif\n"
     result += (
         f"`define TORUS_SWITCH_PIPE_NUM  {int(device.noc_pipelining_stages) - 1}\n"
     )

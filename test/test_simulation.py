@@ -42,12 +42,13 @@ def generate_project(
     split_input_fanout=False,
     ii_max=None,
     cfg_width=None,
+    extra=(),
 ):
     """Run mocarabe and return the generated rtl directory.
 
     With device, c=None takes the channel count from the device file.  max_c
     starts at c and raises it until the ILP finds a schedule.  ii_max and
-    cfg_width shape the soft bitstream.
+    cfg_width shape the soft bitstream.  extra: more mocarabe arguments.
     """
     cmd = ["python3", "-m", "mocarabe", "-dfg", dfg, "-II", str(ii)]
     if device:
@@ -64,7 +65,7 @@ def generate_project(
         cmd += ["--ii_max", str(ii_max)]
     if cfg_width is not None:
         cmd += ["--cfg_width", str(cfg_width)]
-    cmd += ["--place_time", str(place_time), "--sched_method", sched_method]
+    cmd += ["--place_time", str(place_time), "--sched_method", sched_method, *extra]
     result = subprocess.run(cmd, capture_output=True, text=True, cwd=MOCARABE_ROOT)
     assert result.returncode == 0, f"mocarabe failed:\n{result.stdout}\n{result.stderr}"
 
@@ -295,8 +296,9 @@ def test_corrupt_soft_bitstream_fails():
     with open(os.path.join(rtl_dir, "benchmark.h")) as f:
         peconf = re.search(r"`define PECONF \d+'h(\w+)", f.read()).group(1)
     ops = list(reversed(peconf))  # PE type per pe_idx
-    for row in range(1, len(frames)):
-        pe = (row - 1) // layout["ii_max"]
+    first_pe_row = 1 + layout["ii_max"]  # after the global row and the output rows
+    for row in range(first_pe_row, len(frames)):
+        pe = (row - first_pe_row) // layout["ii_max"]
         addr = (frames[row] >> offset["op1_addr"]) & (2 ** width["op1_addr"] - 1)
         if ops[pe] in "01" and addr:  # an adder or multiplier slot that reads its FIFO
             frames[row] ^= 1 << offset["op1_addr"]
@@ -334,3 +336,66 @@ def test_soft_bitstream_reprograms_one_chip(tmp_path):
         shutil.copy(os.path.join(other, f), reprogrammed)
     assert_no_errors(simulate(str(reprogrammed), "soft"))
 
+
+
+# ── Chip-sized datapaths and shared IO (the TinyTapeout demo) ─────────────────
+
+# The demo: level1_linear packed into a 2x2 array at II=4.  Its four inputs share
+# one input bus and its output reaches io_out, each in its own slot; 8-bit data,
+# 16-deep FIFOs and a 2-stage PE pipeline.
+DEMO = dict(
+    dfg="hgr/int_level1_linear",
+    ii=4,
+    iod=4,
+    ard=4,
+    c=2,
+    max_c=6,
+    cfg_width=8,
+    extra=[
+        "--shared_io", "--data_width", "8", "--fifo_depth", "16", "--pe_pipe", "2",
+        "--bitstream", "soft",
+    ],
+)
+
+
+def generate_demo():
+    return generate_project(**DEMO)
+
+
+@pytest.mark.timeout(2 * SIM_TIMEOUT)
+def test_bitstreams_agree_shared_io_demo():
+    rtl_dir = generate_demo()
+    with open(os.path.join(rtl_dir, "benchmark.h")) as f:
+        header = f.read()
+    for define in ("BENCHMARK_DATA_WIDTH 8", "FIFO_DEPTH 16", "PE_PIPE_NUM 2", "BENCHMARK_X_WIDTH 2"):
+        assert define in header
+    with open(os.path.join(rtl_dir, "mocarabe_tb.sv")) as f:
+        assert "assert(io_out ==" in f.read(), "the output port is not checked"
+
+    with open(os.path.join(rtl_dir, "io_schedule.json")) as f:
+        schedule = json.load(f)
+    slots = [i["cycle"] % schedule["ii"] for i in schedule["inputs"]]
+    assert len(slots) == 4 and len(set(slots)) == 4, "inputs share a slot of the input bus"
+    assert len(schedule["outputs"]) == 1
+    assert_bitstreams_agree(rtl_dir)
+
+
+@SOFT
+@pytest.mark.timeout(SIM_TIMEOUT)
+def test_int_adder_chain_ii2_8bit_fifo16(mode):
+    output = run_simulation(
+        "hgr/int_adder_chain", 2, mode=mode, c=2, max_c=8, cfg_width=8,
+        extra=["--data_width", "8", "--fifo_depth", "16"],
+    )
+    assert_no_errors(output)
+
+
+def test_shared_io_needs_a_slot_per_input():
+    # poly_quadratic has four inputs (two are constants) and II=2 has two slots
+    cmd = [
+        "python3", "-m", "mocarabe", "-dfg", "hgr/int_poly_quadratic", "-II", "2",
+        "-C", "2", "--shared_io", "--place_time", "0.1", "--sched_method", "ILP",
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True, cwd=MOCARABE_ROOT)
+    assert result.returncode != 0
+    assert "4 inputs need their own slots but II is 2" in result.stderr

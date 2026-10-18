@@ -125,7 +125,9 @@ module pe_2_input #(
             now <= now + 1;
         if( now >= 8 )
             done_a_pe = 1;
+`ifdef MOCARABE_VERBOSE
         $display("@g%0d, (%0d,%0d) i_operand0: %0d, i_operand1: %0d, computed %0d, outputting %0d", global_cycle, X, Y, i_operand0, i_operand1,result_pipe[0], result_pipe[PIPE-1]);
+`endif
 
     end
 

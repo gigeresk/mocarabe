@@ -1,10 +1,12 @@
 import itertools
 import copy
+import json
 import math
 
 import numpy as np
 
-from .header_gen import DATA_WIDTH, FIFO_DEPTH
+from .header_gen import DATA_WIDTH
+from .bitstream_gen import out_fields, pack
 
 # A_val = execute - arrival - 5 is the SRL read address for an operand; the
 # smallest value the original backward pass produced, kept as the lower bound
@@ -127,13 +129,14 @@ def solve_global_timing(dataflow_graph, placement, h, v, enter, exit_, device):
 
     For a net u -> w the operand waits A_val = E_w - pipe - E_u - noc - 5 cycles
     in w's SRL (E = NoC enter cycle, noc = cycles on the NoC), which must be in
-    [MIN_SRL_ADDRESS, FIFO_DEPTH - 1].  Each node's E is pinned modulo II to the
+    [MIN_SRL_ADDRESS, device.fifo_depth - 1].  Each node's E is pinned modulo II to the
     slot the scheduler chose, so E = II*k + slot and the bounds become integer
     difference constraints on k, solved exactly with Bellman-Ford.
     """
     II = device.II
     pipe = device.pe_pipelining_stages
     C = device.physical_channels
+    fifo_depth = device.fifo_depth
     nets = dataflow_graph.ordered_hyperedge_id_list()
     nodes = dataflow_graph.ordered_node_id_list()
 
@@ -167,10 +170,10 @@ def solve_global_timing(dataflow_graph, placement, h, v, enter, exit_, device):
     for tail, head, noc in edges:
         base = pipe + noc + 5 + slot[tail] - slot[head]
         lo = math.ceil((base + MIN_SRL_ADDRESS) / II)
-        hi = math.floor((base + FIFO_DEPTH - 1) / II)
+        hi = math.floor((base + fifo_depth - 1) / II)
         if lo > hi:
             raise ValueError(
-                f"operand from node {tail} to node {head} cannot fit a {FIFO_DEPTH}-deep FIFO"
+                f"operand from node {tail} to node {head} cannot fit a {fifo_depth}-deep FIFO"
             )
         constraints.append((tail, head, hi))
         constraints.append((head, tail, -lo))
@@ -186,7 +189,7 @@ def solve_global_timing(dataflow_graph, placement, h, v, enter, exit_, device):
             break
     else:
         raise ValueError(
-            f"no timing keeps every operand within the {FIFO_DEPTH}-deep PE FIFOs: "
+            f"no timing keeps every operand within the {fifo_depth}-deep PE FIFOs: "
             "operands that fan out to consumers far apart in time need deeper FIFOs"
         )
 
@@ -321,6 +324,7 @@ def generate_op_addresses_and_op_port_select(
     pe_in_events = []  # (arrival_time, port, head_pe_xy, tail_node)
     address_owner = dict()
     for operand, port in zip(operands, ports):
+        operand["port"] = port
         x, y = operand["pe"]
         execute_time_for_this_op = global_node_execute_cycle[operand["head"]]
         load_time = (execute_time_for_this_op - 2) % T
@@ -328,7 +332,7 @@ def generate_op_addresses_and_op_port_select(
         op_port_select[x][y][port][operand["slot"]] = operand["channel"]
 
         A_val = execute_time_for_this_op - operand["arrival"] - 5
-        assert 0 <= A_val < FIFO_DEPTH, (
+        assert 0 <= A_val < device.fifo_depth, (
             f"SRL address {A_val} for node {operand['head']} is outside the FIFO"
         )
         owner = address_owner.setdefault((x, y, port, load_time), operand["head"])
@@ -340,13 +344,34 @@ def generate_op_addresses_and_op_port_select(
 
         pe_in_events.append((operand["arrival"], port, list(operand["pe"]), operand["tail"]))
 
-    return op_addresses, op_port_select, pe_in_events
+    return op_addresses, op_port_select, pe_in_events, operands
+
+
+def is_io_label(label):
+    """inputs, outputs and constants: named or numeric DFG nodes (IO PEs)"""
+    return label.isidentifier() or label.lstrip("-").isnumeric()
+
+
+def input_name(dataflow_graph, node):
+    """The host-side input a root node reads; split_input_fanout copies share it"""
+    attributes = dataflow_graph.get_node_attributes(node)
+    return attributes.get("copy_of", attributes["label"])
+
+
+def shared_input_value(name, names, iteration, data_width):
+    """Test value of input `name` in one iteration on the shared input bus: a
+    constant is its own value; other inputs differ by name and by iteration."""
+    if name.lstrip("-").isnumeric():
+        value = int(name)
+    else:
+        value = 29 * names.index(name) + 11 * iteration + 3
+    return value % 2**data_width
 
 
 """ Given values for all input nodes and a DFG, return a dict with every node's value"""
 
 
-def get_node_values(input_values, dataflow_graph):
+def get_node_values(input_values, dataflow_graph, data_width=DATA_WIDTH):
     # note that we assume 2-input operations
 
     known_node_values = copy.deepcopy(input_values)
@@ -367,17 +392,20 @@ def get_node_values(input_values, dataflow_graph):
             if both_parents_are_known and len(parent_nodes) > 0:
                 head_label = dataflow_graph.get_node_attribute(unknown_node, "label")
 
-                # the PE datapath is DATA_WIDTH bits wide and wraps
+                # the PE datapath is data_width bits wide and wraps
                 if head_label == "*":
                     known_node_values[unknown_node] = (
                         known_node_values[parent_nodes[0]]
                         * known_node_values[parent_nodes[1]]
-                    ) % 2**DATA_WIDTH
+                    ) % 2**data_width
                 elif head_label == "+":
                     known_node_values[unknown_node] = (
                         known_node_values[parent_nodes[0]]
                         + known_node_values[parent_nodes[1]]
-                    ) % 2**DATA_WIDTH
+                    ) % 2**data_width
+                elif is_io_label(head_label) and parent_nodes[0] == parent_nodes[1]:
+                    # an output node (one input) shows its operand
+                    known_node_values[unknown_node] = known_node_values[parent_nodes[0]]
                 else:
                     assert True, (
                         f"Unsupported operand {head_label}.  Please add support"
@@ -425,7 +453,7 @@ def generate_and_write_pe_memories(
 
     """ What we're really after """
     # edge_each_fanout_write_into_srl_time does not really have to be returned
-    op_addresses, op_port_select, pe_in_events = (
+    op_addresses, op_port_select, pe_in_events, operands = (
         generate_op_addresses_and_op_port_select(
             device,
             NUM_OPERANDS,
@@ -480,20 +508,80 @@ def generate_and_write_pe_memories(
         else:
             execute_cycle2node[cycle] = [k]
 
-    # assert_values
-    root_node_values = {}
-    for input_node in dataflow_graph.get_all_root_nodes():
-        x, y = placement_result[input_node]
-        root_node_values[input_node] = global_node_execute_cycle[input_node] + 100 * (
-            x + y * device.Nx
-        )  # to prevent 0
-
-    assert_values = get_node_values(root_node_values, dataflow_graph)
-
-    # Second-iteration expected values: each root input shifts by II each period
     II = device.II
-    root_node_values_2nd = {node: val + II for node, val in root_node_values.items()}
-    assert_values_2nd = get_node_values(root_node_values_2nd, dataflow_graph)
+    data_width = device.data_width
+    roots = sorted(dataflow_graph.get_all_root_nodes(), key=int)
+    labels = {n: dataflow_graph.get_node_attribute(n, "label") for n in dataflow_graph.ordered_node_id_list()}
+
+    # assert_values
+    if device.shared_io:
+        # one input bus: each input is sampled from it at its own execute cycle
+        names = sorted({input_name(dataflow_graph, n) for n in roots})
+        input_slots = {}
+        for node in roots:
+            slot = global_node_execute_cycle[node] % II
+            if slot in input_slots:
+                raise ValueError(
+                    f"inputs {input_slots[slot]} and {node} both read the shared input in slot {slot}"
+                )
+            input_slots[slot] = node
+
+        def iteration_inputs(iteration):
+            return {
+                n: shared_input_value(input_name(dataflow_graph, n), names, iteration, data_width)
+                for n in roots
+            }
+
+        root_node_values = iteration_inputs(0)
+        root_node_values_2nd = iteration_inputs(1)
+    else:
+        root_node_values = {}
+        for input_node in roots:
+            x, y = placement_result[input_node]
+            root_node_values[input_node] = global_node_execute_cycle[input_node] + 100 * (
+                x + y * device.Nx
+            )  # to prevent 0
+        # Second-iteration expected values: each root input shifts by II each period
+        root_node_values_2nd = {node: val + II for node, val in root_node_values.items()}
+        # the IO PEs see the testbench's formula through a data_width-bit port
+        for values in (root_node_values, root_node_values_2nd):
+            for node in values:
+                values[node] %= 2**data_width
+
+    assert_values = get_node_values(root_node_values, dataflow_graph, data_width)
+    assert_values_2nd = get_node_values(root_node_values_2nd, dataflow_graph, data_width)
+
+    # Output port: an output (IO leaf) reaches its IO PE's operand port in the slot
+    # its net exits; io_out registers that port then and shows it one cycle later.
+    # Each slot drives io_out from at most one output.
+    leaves = set(dataflow_graph.get_leaf_nodes())
+    o_fields, out_w = out_fields(device.Nx * device.Ny)
+    out_rows = [0] * II
+    slot_output = dict()
+    io_outputs = []
+    for operand in operands:
+        node = operand["head"]
+        if node not in leaves or not is_io_label(labels[node]):
+            continue
+        tap = operand["arrival"] + 3  # when pe_in{port} shows it
+        slot = tap % II
+        assert slot == operand["slot"], (
+            f"output {node} reaches its PE at cycle {tap}, not in exit slot {operand['slot']}"
+        )
+        if slot in slot_output:
+            if device.shared_io:
+                raise ValueError(
+                    f"outputs {slot_output[slot]} and {node} both use io_out in slot {slot}"
+                )
+            continue  # without shared IO, extra outputs stay off io_out
+        slot_output[slot] = node
+        x, y = operand["pe"]
+        row = {"valid": 1, "port": operand["port"], "pe": x + y * device.Nx}
+        out_rows[slot] = pack(row, o_fields, f"output {node}")
+        io_outputs.append({"node": node, "label": labels[node], "cycle": tap + 1})
+
+    with open(proj_dir + "/rtl/io_out_memory.dat", "w") as f:
+        f.write("".join(format(row, f"0{out_w}b") + "\n" for row in out_rows))
 
     Nx = resource_graph.Nx
 
@@ -541,8 +629,50 @@ def generate_and_write_pe_memories(
             )
         )
 
+    # Output port: io_out and its valid strobe, both iterations
+    for output in io_outputs:
+        node = output["node"]
+        for cycle, values, it in ((output["cycle"], assert_values, 1), (output["cycle"] + II, assert_values_2nd, 2)):
+            events.append((cycle, "io_out", values[node], f"output {output['label']} iter{it}"))
+            events.append((cycle, "io_out_valid", 1, f"output {output['label']} iter{it} valid"))
+
     events.sort(key=lambda e: e[0])
     assert_count = len(events)
+
+    if device.shared_io:
+        # the input bus, cycle by cycle from run cycle 0, for every iteration that
+        # reaches an assertion: input n's iteration k is sampled at E_n + k*II
+        length = max(e[0] for e in events) + II + 1
+        stream = [0] * length
+        for node in roots:
+            execute = global_node_execute_cycle[node]
+            for cycle in range(execute % II, length, II):
+                stream[cycle] = shared_input_value(
+                    input_name(dataflow_graph, node), names, (cycle - execute) // II, data_width
+                )
+        digits = -(-data_width // 4)
+        with open(proj_dir + "/rtl/io_stream.hex", "w") as f:
+            f.write("".join(f"{value:0{digits}x}\n" for value in stream))
+
+        # what a host (or the TinyTapeout test) needs to drive the chip
+        schedule = {
+            "data_width": data_width,
+            "ii": II,
+            "fifo_depth": device.fifo_depth,
+            "inputs": [
+                {"node": n, "name": input_name(dataflow_graph, n), "cycle": global_node_execute_cycle[n]}
+                for n in roots
+            ],
+            "outputs": io_outputs,
+            "nodes": {
+                n: {"label": labels[n], "operands": dataflow_graph.get_parent_nodes(n)}
+                for n in dataflow_graph.ordered_node_id_list()
+            },
+            "cycles": "input n is sampled at run cycle cycle + k*II for iteration k; "
+            "output n is on io_out at run cycle cycle + k*II",
+        }
+        with open(proj_dir + "/rtl/io_schedule.json", "w") as f:
+            json.dump(schedule, f, indent=2)
 
     asserts_string = ""
     last_cycle = 0

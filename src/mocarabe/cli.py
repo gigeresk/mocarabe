@@ -15,6 +15,7 @@ import mocarabe.pe_allocator as pe_alloc
 import mocarabe.cad.placer as placr
 import mocarabe.cad.scheduler as schedulr
 from mocarabe.rtl_gen import RTLGenerator
+from mocarabe.rtl_gen.header_gen import DATA_WIDTH, FIFO_DEPTH, FIFO_DEPTHS
 from mocarabe.file_util import FilePathsHelper
 from mocarabe.resource_graph import ResourceGraph
 
@@ -82,6 +83,28 @@ def parse_args(argv=None):
         "file's ii_max, else II)",
     )
     parser.add_argument(
+        "--data_width",
+        metavar="datapath bits",
+        type=int,
+        default=DATA_WIDTH,
+        help=f"PE datapath width in bits (default {DATA_WIDTH})",
+    )
+    parser.add_argument(
+        "--fifo_depth",
+        type=int,
+        choices=FIFO_DEPTHS,
+        default=FIFO_DEPTH,
+        help=f"depth of each PE operand FIFO; an operand waits at most depth-1 cycles "
+        f"(default {FIFO_DEPTH})",
+    )
+    parser.add_argument(
+        "--shared_io",
+        action="store_true",
+        help="all IO PEs share one input bus and the outputs share io_out (a chip's pins): "
+        "every input and every output gets its own schedule slot, so II must be at least "
+        "the number of inputs and of outputs",
+    )
+    parser.add_argument(
         "--log",
         metavar="log",
         type=str,
@@ -143,6 +166,27 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
+def shared_io_groups(dataflow_hgraph, placement, II):
+    """With shared IO, inputs read one bus and outputs drive one port, so the
+    scheduler must give the inputs' NoC enters (and the outputs' NoC exits)
+    different slots.  Returns [("enter", [(x, y, net)]), ("exit", [(x, y, net)])]."""
+    inputs, outputs = [], []
+    leaves = set(dataflow_hgraph.get_leaf_nodes())
+    for net, hyperedge_id in enumerate(dataflow_hgraph.ordered_hyperedge_id_iterator()):
+        tail = dataflow_hgraph.get_hyperedge_attribute(hyperedge_id, "tail")[0]
+        if not dataflow_hgraph.node_is_head_for(tail):
+            inputs.append((*placement[tail], net))
+        for head in dict.fromkeys(dataflow_hgraph.get_hyperedge_attribute(hyperedge_id, "head")):
+            if head in leaves:
+                outputs.append((*placement[head], net))
+    for kind, members in (("inputs", inputs), ("outputs", outputs)):
+        if len(members) > II:
+            raise ValueError(
+                f"--shared_io: {len(members)} {kind} need their own slots but II is {II}"
+            )
+    return [("enter", inputs), ("exit", outputs)]
+
+
 def main(argv=None):
 
     args = parse_args(argv)
@@ -170,6 +214,7 @@ def main(argv=None):
     ii_max = args.ii_max or (device_spec.ii_max if device_spec else None) or II
     assert ii_max >= II, f"II_MAX {ii_max} (--ii_max or the device file) is smaller than -II {II}"
     assert args.cfg_width >= 1, "--cfg_width must be at least 1"
+    assert args.data_width >= 1, "--data_width must be at least 1"
 
     noc_pipelining_stages = args.noc_pipe
     pe_pipelining_stages = args.pe_pipe
@@ -399,7 +444,12 @@ def main(argv=None):
         unroll_factor,
         num_nets,
         II,
+        data_width=args.data_width,
+        fifo_depth=args.fifo_depth,
+        shared_io=args.shared_io,
     )
+    if args.shared_io:
+        device.shared_io_groups = shared_io_groups(dataflow_hgraph, dfg_node_to_pe_xy_map_, II)
     if sched_method == "ILP":
         boundingBoxEnabled = False
 
@@ -495,13 +545,20 @@ def main(argv=None):
             cfg_words = 0
             if C > 1:
                 cfg_words = RTLGenerator.write_bitstream(
-                    file_helper.rtl_dir, Nx, Ny, C, II, ii_max, args.cfg_width
+                    file_helper.rtl_dir, Nx, Ny, C, II, ii_max, args.cfg_width, args.fifo_depth
                 )
             elif args.bitstream == "soft":
                 raise ValueError("the soft bitstream needs -C 2 or more")
 
             RTLGenerator.testbench_gen(
-                file_helper.proj_dir + "rtl/", Nx, Ny, C, asserts_string, cfg_words
+                file_helper.proj_dir + "rtl/",
+                Nx,
+                Ny,
+                C,
+                asserts_string,
+                cfg_words,
+                fifo_depth=args.fifo_depth,
+                shared_io=args.shared_io,
             )
 
             Sim.print_vivado_sim_cmd(file_helper)

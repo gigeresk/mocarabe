@@ -1,7 +1,9 @@
-# PE datapath width; testbench expected values wrap at this width
+# defaults for Device.data_width (PE datapath bits; expected values wrap at this
+# width) and Device.fifo_depth (operands wait at most FIFO_DEPTH - 1 cycles)
 DATA_WIDTH = 32
-# depth of each PE input's SRL FIFO; operands can wait at most FIFO_DEPTH - 1 cycles
 FIFO_DEPTH = 64
+# depths pe_srl.v implements (Xilinx SRL16E/SRLC32E/SRL64 models)
+FIFO_DEPTHS = (16, 32, 64)
 
 
 def verilog_header_gen(rtl_dir, device, pe_operators, ii_max=None, cfg_width=1, soft=False):
@@ -14,14 +16,13 @@ def verilog_header_gen(rtl_dir, device, pe_operators, ii_max=None, cfg_width=1, 
     # `define BENCHMARK_SCHED_LEN 8
     # `define peconf 9'b001001001
 
-    result = "// Application-specific macro parameters"
-    result += f"`define BENCHMARK_DATA_WIDTH {DATA_WIDTH}\n"
+    result = "// Application-specific macro parameters\n"
+    result += f"`define BENCHMARK_DATA_WIDTH {device.data_width}\n"
     result += f"`define BENCHMARK_X_WIDTH {device.Nx}\n"
     result += f"`define BENCHMARK_Y_WIDTH {device.Ny}\n"
     result += f"`define BENCHMARK_SCHED_LEN {device.II}\n"
     result += f"`define BENCHMARK_CHAN_WIDTH {device.physical_channels}\n"
-    result += f"`define BENCHMARK_DATA_WIDTH {DATA_WIDTH}\n"
-    result += f"`define FIFO_DEPTH {FIFO_DEPTH}\n"
+    result += f"`define FIFO_DEPTH {device.fifo_depth}\n"
     result += f"`define BENCHMARK_II_MAX {ii_max or device.II}\n"
     result += f"`define CFG_WIDTH {cfg_width}\n"
     result += "`ifndef BITSTREAM_SOFT\n"

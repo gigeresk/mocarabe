@@ -101,6 +101,27 @@ vvp sim.vvp
 - **Wide input fanout.** Each PE input buffers operands in a 64-deep FIFO. If one
   input feeds consumers more than 63 cycles apart (e.g. Horner-form polynomials),
   `--split_input_fanout` gives each consumer its own copy of that input.
+- **Datapath size.** `--data_width` (default 32) sets the PE datapath width, and
+  `--fifo_depth` (16, 32 or 64) sets the operand FIFO depth. Each operation adds
+  roughly `--pe_pipe` (default 5) + 7 cycles of latency, so with a 16-deep FIFO an
+  input that skips an operation level may not fit; a shorter `--pe_pipe` helps.
+- **Shared IO (a chip's pins).** `--shared_io` makes every IO PE read one input bus
+  and sends the outputs to the `io_out` port, so each input and each output needs
+  its own schedule slot (II at least the number of inputs and of outputs). The
+  scheduler enforces this. The project gets `io_schedule.json`, which gives the cycle
+  each input is sampled and each output appears, and the testbench drives
+  `io_stream.hex`. Constants count as inputs.
+- **TinyTapeout.** `python -m mocarabe.tt_export proj/<name>/rtl/ <tt repo> --tiles 3x2`
+  copies a soft, shared-IO project with at most 8-bit data and configuration words
+  into a [TinyTapeout template](https://github.com/TinyTapeout/ttsky-verilog-template)
+  clone. It adds the wrapper `tt_um_gigeresk_mocarabe`, a cocotb test that programs
+  the chip and checks its outputs, `info.yaml` and the docs. Pins: `ui_in` carries
+  config words and then inputs, `uio[0]` is `cfg_en`, `uo_out` is the output and
+  `uio[1]` is `out_valid`. The demo:
+  ```bash
+  mocarabe -dfg hgr/int_level1_linear -II 4 -iod 4 -ard 4 -C 2 --max_C 6 --sched_method ILP \
+           --shared_io --data_width 8 --fifo_depth 16 --pe_pipe 2 --bitstream soft --cfg_width 8
+  ```
 
 
 ## How to Cite

@@ -18,3 +18,11 @@
 `ifndef MOCARABE_DAT_DIR
 `define MOCARABE_DAT_DIR ""
 `endif
+
+// Per-cycle $display chatter from the PEs and switches: simulation only, and off
+// with -DMOCARABE_QUIET
+`ifndef SYNTHESIS
+`ifndef MOCARABE_QUIET
+`define MOCARABE_VERBOSE
+`endif
+`endif

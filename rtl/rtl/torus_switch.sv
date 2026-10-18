@@ -107,6 +107,7 @@ module torus_switch #(
         if(rst) begin
             e_out_r <= 0;
             n_out_r <= 0;
+            o_to_pe_r <= 0;
             now <= 0;
         end else begin
             n_out_r <= n_out_c;
@@ -120,9 +121,11 @@ module torus_switch #(
                 now <= now + 1;
             `define DEBUG 1
             `ifdef DEBUG
+            `ifdef MOCARABE_VERBOSE
                 $display("(%0d,%0d), cycle ",X,Y,now);
                 $display("inputs %0d south, %0d west, %0d from PE ", s_in, w_in, i_from_pe);
                 $display("sending %0d north, %0d east, %0d to PE ", n_out_r, e_out_r, o_to_pe);
+            `endif
             `endif
 
         end

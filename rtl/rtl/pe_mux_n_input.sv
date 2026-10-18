@@ -13,7 +13,7 @@ module pe_mux_n_input #(
 ) (
     input  wire clk,
     input  wire rst,
-    input  wire [`BENCHMARK_DATA_WIDTH-1:0] in [NUM_CHANNEL-1:0],
+    input  wire [NUM_CHANNEL-1:0][`BENCHMARK_DATA_WIDTH-1:0] in,  // channel c at in[c]
     output reg  [`BENCHMARK_DATA_WIDTH-1:0] out0, // output to PE port 0
     output reg  [`BENCHMARK_DATA_WIDTH-1:0] out1, // output to PE port 1
     // soft bitstream: slot t's {port 1, port 0} selects at cfg[t*2*SEL_W +: 2*SEL_W]

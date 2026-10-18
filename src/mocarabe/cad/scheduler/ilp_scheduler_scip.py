@@ -584,6 +584,13 @@ def schedule(
                         m.addCons(enter[x, y, c, p, t] <= enterc[x, y, p, t])
                         m.addCons(exit_[x, y, c, p, t] <= exitc[x, y, p, t])
 
+    # Shared IO: inputs read one bus (outputs drive one port), so at most one of
+    # them may enter (exit) the NoC in each slot
+    for kind, members in device.shared_io_groups:
+        var = enterc if kind == "enter" else exitc
+        for t in range(0, T):
+            m.addCons(scip.quicksum(var[x, y, p, t] for x, y, p in members) <= 1)
+
     # Set objective: minimize hops
     m.setObjective(
         scip.quicksum(

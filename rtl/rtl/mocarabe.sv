@@ -20,10 +20,15 @@ module mocarabe #(
     // soft bitstream programming port (unused with the hard bitstream), see cfg_loader.sv
     input  wire cfg_en,
     input  wire [CFG_W-1:0] cfg_data,
-    input  wire [D_W-1:0] io_data_in [X_MAX*Y_MAX-1:0],
-    output wire [D_W-1:0] pe_o [X_MAX*Y_MAX-1:0],
-    output wire [D_W-1:0] pe_input0_o [X_MAX*Y_MAX-1:0],
-    output wire [D_W-1:0] pe_input1_o [X_MAX*Y_MAX-1:0],
+    // IO PE p reads io_data_in[p] (a chip ties every PE to the same input pins)
+    input  wire [X_MAX*Y_MAX-1:0][D_W-1:0] io_data_in,
+    // the output port: in each slot, one IO PE's operand, chosen by the output rows
+    output reg  [D_W-1:0] io_out,
+    output reg  io_out_valid,
+    // every PE's output and operands, for testbenches
+    output wire [X_MAX*Y_MAX-1:0][D_W-1:0] pe_o,
+    output wire [X_MAX*Y_MAX-1:0][D_W-1:0] pe_input0_o,
+    output wire [X_MAX*Y_MAX-1:0][D_W-1:0] pe_input1_o,
     output wire done_pe,
     output wire done_all
 );
@@ -36,18 +41,24 @@ module mocarabe #(
     wire [D_W-1:0] o_to_pe [X_MAX*Y_MAX-1:0][NUM_CHANNEL-1:0]; // from noc to pe
     wire [D_W-1:0] mux_to_pe [NUM_CHANNEL-1:0][X_MAX*Y_MAX-1:0];//router to pe mux output
 
-    reg [$clog2(SCHED_LEN)-1:0] now=0; //bitwidth of schedule
-
     // Soft bitstream frame: one PE's configuration for one schedule slot (see pe_cfg.sv)
     localparam NOW_W = SCHED_LEN == 1 ? 1 : $clog2(SCHED_LEN);
     localparam ADDR_W = $clog2(`FIFO_DEPTH);
     localparam SEL_W = NUM_CHANNEL > 1 ? $clog2(NUM_CHANNEL) : 1;
     localparam FRAME_W = 6*NUM_CHANNEL + 2*ADDR_W + 2*SEL_W;
 
+    // Output row for one slot (OUT_W bits, LSB first): valid, operand port, PE index
+    localparam PE_W = X_MAX*Y_MAX > 1 ? $clog2(X_MAX*Y_MAX) : 1;
+    localparam OUT_W = 2 + PE_W;
+
+    genvar x, y, c, t;
+
     wire [NOW_W-1:0] sched_last;  // II - 1: where every slot counter wraps
     wire [FRAME_W-1:0] cfg_frame;
     wire cfg_frame_we;
-    wire cfg_tok [X_MAX*Y_MAX:0];  // configuration token chain, global row then PEs
+    // configuration token chain: global row, then the output rows, then each PE's rows
+    wire [X_MAX*Y_MAX+1:0] cfg_tok;
+    wire [SCHED_LEN*OUT_W-1:0] out_rows;  // slot t's output row at out_rows[t*OUT_W +: OUT_W]
 
     generate
         if (`BITSTREAM_SOFT) begin : soft_bitstream
@@ -65,18 +76,49 @@ module mocarabe #(
                 .tok_out(cfg_tok[0]),
                 .ii_last(sched_last)
             );
+            pe_cfg #(
+                .SCHED_LEN(SCHED_LEN),
+                .FRAME_W(OUT_W),
+                .STORAGE(CFG_STORAGE)
+            ) out_cfg (
+                .clk(clk),
+                .cfg_en(cfg_en),
+                .frame_we(cfg_frame_we),
+                .frame(cfg_frame[OUT_W-1:0]),
+                .tok_in(cfg_tok[0]),
+                .tok_out(cfg_tok[1]),
+                .rows(out_rows)
+            );
         end else begin : hard_bitstream
             assign sched_last = SCHED_LEN - 1;
+            reg [OUT_W-1:0] out_mem [SCHED_LEN-1:0];
+            initial $readmemb($sformatf("%sio_out_memory.dat", `MOCARABE_DAT_DIR), out_mem);
+            for (t = 0; t < SCHED_LEN; t = t + 1) begin : out_slots
+                assign out_rows[t*OUT_W +: OUT_W] = out_mem[t];
+            end
         end
     endgenerate
 
-    //assign pe_o0 = i_from_pe[0];
+    // Output port: in slot t, if out_rows says so, register the value at operand port
+    // `port` of PE `pe` onto io_out.  Only IO PEs feed the taps.
+    wire [X_MAX*Y_MAX-1:0][D_W-1:0] out_tap0, out_tap1;
+    wire [OUT_W-1:0] out_slot [SCHED_LEN-1:0];
+    reg  [NOW_W-1:0] out_now;
+    for (t = 0; t < SCHED_LEN; t = t + 1) begin : out_slot_rows
+        assign out_slot[t] = out_rows[t*OUT_W +: OUT_W];
+    end
+    wire [OUT_W-1:0] out_sel = out_slot[out_now];
+    wire [PE_W-1:0] out_pe = out_sel[OUT_W-1:2];
 
     always @(posedge clk) begin
-        if(rst) begin
-            now <= 0;
+        if (rst) begin
+            out_now <= 0;
+            io_out <= 0;
+            io_out_valid <= 1'b0;
         end else begin
-            now <= now + 1;
+            out_now <= (out_now == sched_last) ? {NOW_W{1'b0}} : out_now + 1'b1;
+            io_out_valid <= out_sel[0];
+            io_out <= !out_sel[0] ? {D_W{1'b0}} : out_sel[1] ? out_tap1[out_pe] : out_tap0[out_pe];
         end
     end
     //for simulation only
@@ -94,7 +136,6 @@ module mocarabe #(
 
 
 
-    genvar x, y, c, t;
     generate
     for (y = 0; y < Y_MAX; y = y + 1) begin : ys
         for (x = 0; x < X_MAX; x = x + 1) begin : xs
@@ -114,8 +155,8 @@ module mocarabe #(
                         .cfg_en(cfg_en),
                         .frame_we(cfg_frame_we),
                         .frame(cfg_frame),
-                        .tok_in(cfg_tok[(x) + (y)*X_MAX]),
-                        .tok_out(cfg_tok[(x) + (y)*X_MAX + 1]),
+                        .tok_in(cfg_tok[(x) + (y)*X_MAX + 1]),
+                        .tok_out(cfg_tok[(x) + (y)*X_MAX + 2]),
                         .rows(cfg_rows)
                     );
                 end else begin : hard_bitstream
@@ -178,9 +219,9 @@ module mocarabe #(
                     );
                 end
                 //fanin from every channel to the 2 PE inputs
-                wire [D_W-1:0] mux_in [NUM_CHANNEL-1:0];
+                wire [NUM_CHANNEL*D_W-1:0] mux_in;  // channel c at [c*D_W +: D_W]
                 for (c = 0; c < NUM_CHANNEL; c = c + 1) begin : mux_ins
-                    assign mux_in[c] = o_to_pe[(x) + (y)*X_MAX][c];
+                    assign mux_in[c*D_W +: D_W] = o_to_pe[(x) + (y)*X_MAX][c];
                 end
                 pe_mux_n_input #(
                     .SCHED_LEN(SCHED_LEN),
@@ -198,10 +239,19 @@ module mocarabe #(
                     .cfg(mux_cfg),
                     .sched_last(sched_last)
                 );
+                if (PECONFIG[(4*((x) + (y)*X_MAX)+3):4*((x) + (y)*X_MAX)] == 2) begin : io_taps
+                    assign out_tap0[(x) + (y)*X_MAX] = mux_to_pe[0][(x) + (y)*X_MAX];
+                    assign out_tap1[(x) + (y)*X_MAX] = mux_to_pe[1][(x) + (y)*X_MAX];
+                end else begin : no_taps
+                    assign out_tap0[(x) + (y)*X_MAX] = {D_W{1'b0}};
+                    assign out_tap1[(x) + (y)*X_MAX] = {D_W{1'b0}};
+                end
 
             end
             //C = 1, single input PE
             else begin
+                assign out_tap0[(x) + (y)*X_MAX] = {D_W{1'b0}};
+                assign out_tap1[(x) + (y)*X_MAX] = {D_W{1'b0}};
                 pe_1_input #(
                     .SCHED_LEN(SCHED_LEN),
                     .X_MAX(X_MAX),

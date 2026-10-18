@@ -142,7 +142,7 @@ class Netlist(DirectedHypergraph):
                 next_id += 1
                 # numeric constants keep their label; inputs get a suffix
                 copy_label = label if label.lstrip("-").isnumeric() else f"{label}_{copy}"
-                self.add_node(copy_id, label=copy_label)
+                self.add_node(copy_id, label=copy_label, copy_of=label)
                 split_edges.append((copy_id, copy_sinks))
         return split_edges
 

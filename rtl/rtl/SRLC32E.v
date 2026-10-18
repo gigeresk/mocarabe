@@ -36,13 +36,9 @@ module SRLC32E (Q, Q31, A, CE, CLK, D);
     assign  Q = data[A];
     assign  Q31 = data[31];
 
-    initial
-    begin
-          assign  data = INIT;
-          while (CLK === 1'b1 || CLK===1'bX)
-            #10; 
-          deassign data;
-    end
+    // simulation start value; Xilinx's model forced it with assign/deassign, which
+    // the TinyTapeout linter rejects
+    initial data = INIT;
 
     // always @(posedge CLK)
 	  //   if (CE == 1'b1) 

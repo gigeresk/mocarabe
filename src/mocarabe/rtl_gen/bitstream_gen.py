@@ -6,6 +6,9 @@ row, each padded at the top to a whole number of CFG_WIDTH-bit words and sent
 most significant word first:
 
   row 0:  global row, bits [ii_w-1:0] = II - 1
+  then the output rows, one per slot t in 0..II_MAX-1 (which IO PE operand drives
+  io_out in slot t):
+      [0] valid, [1] operand port, [PE_W+1:2] PE index
   then, for every PE p = x + y*Nx in order, for every slot t in 0..II_MAX-1:
       per channel c:  [6c+1:6c] north select, [6c+3:6c+2] east, [6c+5:6c+4] to-PE
       op1 SRL address (ADDR_W bits), op2 SRL address (ADDR_W bits)
@@ -27,12 +30,18 @@ def clog2(n):
     return max(1, (n - 1).bit_length())
 
 
-def frame_fields(C):
+def out_fields(num_pes):
+    """[(name, width)] from bit 0 up for one output row, and its width"""
+    fields = [("valid", 1), ("port", 1), ("pe", clog2(num_pes))]
+    return fields, sum(width for _, width in fields)
+
+
+def frame_fields(C, fifo_depth=FIFO_DEPTH):
     """[(name, width)] from bit 0 up for one PE slot, and the frame width"""
     fields = []
     for c in range(C):
         fields += [(f"north_c{c}", 2), (f"east_c{c}", 2), (f"to_pe_c{c}", 2)]
-    addr_w = clog2(FIFO_DEPTH)
+    addr_w = clog2(fifo_depth)
     sel_w = clog2(C)
     fields += [("op1_addr", addr_w), ("op2_addr", addr_w), ("mux_sel0", sel_w), ("mux_sel1", sel_w)]
     return fields, sum(width for _, width in fields)
@@ -65,25 +74,35 @@ def pe_slot_values(rtl_dir, x, y, C, II):
     return values
 
 
-def write_bitstream(rtl_dir, Nx, Ny, C, II, ii_max, cfg_width):
+def pack(values, fields, where):
+    frame, offset = 0, 0
+    for name, width in fields:
+        value = values[name]
+        assert value < 2**width, f"{where}: {name}={value} needs more than {width} bits"
+        frame |= value << offset
+        offset += width
+    return frame
+
+
+def write_bitstream(rtl_dir, Nx, Ny, C, II, ii_max, cfg_width, fifo_depth=FIFO_DEPTH):
     """Write bitstream.hex and bitstream_layout.json; return the number of words."""
     assert C > 1, "the soft bitstream needs more than one channel"
     assert ii_max >= II, f"II_MAX {ii_max} is smaller than II {II}"
-    fields, frame_w = frame_fields(C)
+    fields, frame_w = frame_fields(C, fifo_depth)
+    o_fields, out_w = out_fields(Nx * Ny)
+    assert out_w <= frame_w, "output rows are wider than a frame"
     ii_w = clog2(ii_max)
 
     frames = [II - 1]  # global row
+    out_rows = read_dat(os.path.join(rtl_dir, "io_out_memory.dat"), 2, II)
+    for t in range(ii_max):
+        frames.append(out_rows[t] if t < II else 0)  # already packed as output rows
     for p in range(Nx * Ny):
         x, y = p % Nx, p // Nx
         values = pe_slot_values(rtl_dir, x, y, C, II)
         for t in range(ii_max):
-            frame, offset = 0, 0
-            for name, width in fields:
-                value = values[name][t] if t < II else 0
-                assert value < 2**width, f"PE ({x},{y}) slot {t}: {name}={value} needs more than {width} bits"
-                frame |= value << offset
-                offset += width
-            frames.append(frame)
+            slot = {name: values[name][t] if t < II else 0 for name, _ in fields}
+            frames.append(pack(slot, fields, f"PE ({x},{y}) slot {t}"))
 
     wpf = words_per_frame(frame_w, cfg_width)
     digits = -(-cfg_width // 4)
@@ -103,8 +122,11 @@ def write_bitstream(rtl_dir, Nx, Ny, C, II, ii_max, cfg_width):
                 "words_per_frame": wpf,
                 "ii": II,
                 "ii_max": ii_max,
+                "fifo_depth": fifo_depth,
                 "global_row": {"ii_minus_1": [0, ii_w]},
-                "pe_rows": "pe = x + y*Nx, then slot 0..ii_max-1",
+                "out_rows": "slot 0..ii_max-1, after the global row",
+                "out_fields": [[name, width] for name, width in o_fields],
+                "pe_rows": "pe = x + y*Nx, then slot 0..ii_max-1, after the output rows",
                 "frame_fields": [[name, width] for name, width in fields],
                 "rows": len(frames),
                 "words": len(words),

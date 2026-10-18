@@ -1,21 +1,38 @@
+import os
+
 from .header_gen import FIFO_DEPTH
 
-# Prologue cycles after configuration with rst held and IO inputs at 0: long
-# enough to push zeros through every SRL FIFO and pipeline, so both bitstreams
-# start run cycle 0 from the same all-zero state.
-FLUSH_CYCLES = 2 * FIFO_DEPTH + 16
+
+def flush_cycles(fifo_depth=FIFO_DEPTH):
+    """Prologue cycles after configuration with rst held and IO inputs at 0: long
+    enough to push zeros through every SRL FIFO and pipeline, so both bitstreams
+    start run cycle 0 from the same all-zero state."""
+    return 2 * fifo_depth + 16
 
 
-def testbench_gen(rtl_dir, Nx, Ny, C, asserts_string, cfg_words=0):
-    """cfg_words: length of bitstream.hex, streamed in when BITSTREAM_SOFT is 1"""
+def testbench_gen(
+    rtl_dir, Nx, Ny, C, asserts_string, cfg_words=0, fifo_depth=FIFO_DEPTH, shared_io=False
+):
+    """cfg_words: length of bitstream.hex, streamed in when BITSTREAM_SOFT is 1.
+    shared_io: every IO PE reads io_stream.hex (one input bus) instead of its own
+    100*pe + cycle formula."""
 
-    # Build per-PE io_data assigns: matches the formula in pe_memory_gen assertion values
+    # Build per-PE io_data assigns: matches the values in pe_memory_gen's assertions
     io_assigns = ""
+    if shared_io:
+        with open(os.path.join(rtl_dir, "io_stream.hex")) as f:
+            stream_len = len(f.read().split())
+        io_assigns += f"    reg `D_WIDTH io_stream [0:{stream_len - 1}];\n"
+        io_assigns += '    initial $readmemh("io_stream.hex", io_stream);\n'
+        io_assigns += f"    wire `D_WIDTH io_bus = (rst || tb_cycle > {stream_len - 1}) ? 0 : io_stream[tb_cycle];\n"
     for y in range(Ny):
         for x in range(Nx):
             pe_idx = x + y * Nx
             base = 100 * pe_idx
-            io_assigns += f"    assign io_data[{pe_idx}] = rst ? 0 : {base} + tb_cycle;\n"
+            if shared_io:
+                io_assigns += f"    assign io_data[{pe_idx}] = io_bus;\n"
+            else:
+                io_assigns += f"    assign io_data[{pe_idx}] = rst ? 0 : {base} + tb_cycle;\n"
 
     top = f"""
 `include "benchmark.h"
@@ -30,10 +47,11 @@ module mocarabe_tb #(
 	reg clk;
 	reg rst = 1;
 
-    wire `D_WIDTH pe_out `XY;
-
-	wire `D_WIDTH pe_in0 `XY;
-	wire `D_WIDTH pe_in1 `XY;
+    wire [X_MAX*Y_MAX-1:0][D_W-1:0] pe_out;
+    wire [X_MAX*Y_MAX-1:0][D_W-1:0] pe_in0;
+    wire [X_MAX*Y_MAX-1:0][D_W-1:0] pe_in1;
+    wire `D_WIDTH io_out;
+    wire io_out_valid;
 
     wire done_pe;
     wire done_all;
@@ -42,7 +60,7 @@ module mocarabe_tb #(
 
     // IO PE stimulus: tb_cycle drives each IO PE's io_input via io_data
     reg [31:0] tb_cycle = 0;
-    wire `D_WIDTH io_data `XY;
+    wire [X_MAX*Y_MAX-1:0][D_W-1:0] io_data;
 {io_assigns}
     // Prologue: rst held and IO inputs at 0.  The soft bitstream is streamed in
     // first (one CFG_WIDTH-bit word per clock on cfg_data while cfg_en is high),
@@ -50,7 +68,7 @@ module mocarabe_tb #(
     // the next posedge is run cycle 0.
     localparam SOFT = `BITSTREAM_SOFT;
     localparam CFG_WORDS = {max(cfg_words, 1)};
-    localparam PROLOGUE = (SOFT ? CFG_WORDS : 0) + {FLUSH_CYCLES};
+    localparam PROLOGUE = (SOFT ? CFG_WORDS : 0) + {flush_cycles(fifo_depth)};
     reg cfg_en = 0;
     reg [`CFG_WIDTH-1:0] cfg_data = 0;
     reg [`CFG_WIDTH-1:0] cfg_stream [0:CFG_WORDS-1];
@@ -65,7 +83,7 @@ module mocarabe_tb #(
 
 	mocarabe #(
 		.X_MAX(X_MAX), .Y_MAX(Y_MAX))
-		p(.clk(clk), .rst(rst), .cfg_en(cfg_en), .cfg_data(cfg_data), .io_data_in(io_data), .pe_o(pe_out), .pe_input0_o(pe_in0), .pe_input1_o(pe_in1), .done_pe(done_pe), .done_all(done_all));
+		p(.clk(clk), .rst(rst), .cfg_en(cfg_en), .cfg_data(cfg_data), .io_data_in(io_data), .io_out(io_out), .io_out_valid(io_out_valid), .pe_o(pe_out), .pe_input0_o(pe_in0), .pe_input1_o(pe_in1), .done_pe(done_pe), .done_all(done_all));
 
     always begin
 		clk = ~clk;
